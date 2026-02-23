@@ -39,11 +39,6 @@ pub shape_id_cnt: usize,
 // Running
 pub progress_rx: Option<mpsc::Receiver<ProgressUpdate>>,
 pub ctx: Option<egui::Context>,
-// pub running: bool,
-// pub progress: f32,
-// pub messages: Vec<String>,
-// pub computed_data: Vec<f64>,
-// pub ctx: egui::Context,
 
 // Results
 pub state: ComputeState,
@@ -74,9 +69,6 @@ pub compute_start: Option<Instant>,
 // Error message
 pub error_msg: Option<String>,
 }
-
-
-
 
 impl Default for WoodCutterApp {
 fn default() -> Self {
@@ -880,19 +872,14 @@ egui::SidePanel::left("sidebar")
                                     self.run_compute(ctx.clone());  // 传入ctx
                                 }
                         });
+
                         // 动态显示进度条
                         if self.state != ComputeState::Running {
-                        ui.add(egui::ProgressBar::new(self.progress as f32)
-                        .animate(true)
-                        .text(format!("计算进度: {:.1}%", self.progress as f32 * 100.0)));
+                            ui.add(egui::ProgressBar::new(self.progress as f32)
+                            .animate(true)
+                            .text(format!("计算进度: {:.1}%", self.progress as f32 * 100.0)));
                         }
 
-                        // // 动态显示消息列表
-                        // egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
-                        //     for msg in &self.messages {
-                        //         ui.label(msg);
-                        //     }
-                        // });
 
                         ui.add_space(4.0);
                         ui.horizontal(|ui| {
