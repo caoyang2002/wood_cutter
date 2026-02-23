@@ -607,7 +607,6 @@ impl eframe::App for WoodCutterApp {
                     // Actions
                     egui::Frame::none()
                         .inner_margin(egui::Margin::symmetric(13.0, 10.0))
-                        .fill(Color32::from_rgb(250, 250, 250))
                         .show(ui, |ui| {
                             let running = self.state == ComputeState::Running;
                             ui.add_enabled_ui(!running, |ui| {
