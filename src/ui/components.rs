@@ -22,6 +22,7 @@ pub fn accent_btn(ui: &mut egui::Ui, label: &str) -> egui::Response {
     )
 }
 
+//
 pub fn secondary_btn(ui: &mut egui::Ui, label: &str) -> egui::Response {
     ui.add(
         egui::Button::new(RichText::new(label).monospace().size(9.0).color(TX2))
@@ -30,6 +31,7 @@ pub fn secondary_btn(ui: &mut egui::Ui, label: &str) -> egui::Response {
     )
 }
 
+// 按钮
 pub fn danger_btn(ui: &mut egui::Ui, label: &str) -> egui::Response {
     ui.add(
         egui::Button::new(RichText::new(label).monospace().size(9.0).color(ERR))

@@ -297,8 +297,8 @@ Ok(v) => v,
 Err(e) => { self.error_msg = Some(e); return; }
 };
 let bh = match parse_positive_f64(&self.board_h, "木板宽度") {
-    Ok(v) => v,
-    Err(e) => { self.error_msg = Some(e); return; }
+Ok(v) => v,
+Err(e) => { self.error_msg = Some(e); return; }
 };
 let kerf: f64 = self.kerf.parse().unwrap_or(0.0);
 let ar = self.allow_rotate;
@@ -307,15 +307,15 @@ let p1: f64 = self.p1.parse().unwrap_or(algo.default_p1());
 let p2: f64 = self.p2.parse().unwrap_or(algo.default_p2());
 
 let tagged: Vec<crate::core::Shape> = self
-    .shapes
-    .iter()
-    .enumerate()
-    .filter_map(|(i, s)| s.to_shape(i))
-    .collect();
+.shapes
+.iter()
+.enumerate()
+.filter_map(|(i, s)| s.to_shape(i))
+.collect();
 
 if tagged.is_empty() {
-    self.error_msg = Some("请至少添加一个有效图形".into());
-    return;
+self.error_msg = Some("请至少添加一个有效图形".into());
+return;
 }
 
 // 设置运行状态
@@ -332,69 +332,69 @@ self.ctx = Some(ctx.clone());
 
 // 在后台线程中执行计算
 thread::spawn(move || {
-    let t0 = Instant::now();
+let t0 = Instant::now();
 
-    // 根据算法类型执行计算
-    let (result, hist) = match algo {
-        AlgoId::MaxRects | AlgoId::Guillotine | AlgoId::BottomLeft | AlgoId::NfpGreedy => {
-            // 快速算法，直接执行
-            let bin_type = match algo {
-                AlgoId::MaxRects => BinType::MaxRects,
-                AlgoId::Guillotine => BinType::Guillotine,
-                AlgoId::BottomLeft => BinType::BottomLeft,
-                AlgoId::NfpGreedy => BinType::NFP,
-                _ => unreachable!(),
-            };
+// 根据算法类型执行计算
+let (result, hist) = match algo {
+AlgoId::MaxRects | AlgoId::Guillotine | AlgoId::BottomLeft | AlgoId::NfpGreedy => {
+// 快速算法，直接执行
+let bin_type = match algo {
+AlgoId::MaxRects => BinType::MaxRects,
+AlgoId::Guillotine => BinType::Guillotine,
+AlgoId::BottomLeft => BinType::BottomLeft,
+AlgoId::NfpGreedy => BinType::NFP,
+_ => unreachable!(),
+};
 
-            // 模拟进度更新（这些算法很快，但我们可以显示简单的进度）
-            for i in 0..5 {
-                tx.send(ProgressUpdate::Progress(i as f64 / 5.0, 0.0)).unwrap_or(());
-                thread::sleep(std::time::Duration::from_millis(10));
-            }
+// 模拟进度更新（这些算法很快，但我们可以显示简单的进度）
+for i in 0..5 {
+tx.send(ProgressUpdate::Progress(i as f64 / 5.0, 0.0)).unwrap_or(());
+thread::sleep(std::time::Duration::from_millis(10));
+}
 
-            let result = pack_sorted(bin_type, &tagged, bw, bh, kerf, ar);
-            (result, vec![])
-        }
+let result = pack_sorted(bin_type, &tagged, bw, bh, kerf, ar);
+(result, vec![])
+}
 
-        AlgoId::GA => {
-            let (res, history) = pack_ga(
-                &tagged, bw, bh, kerf, ar,
-                p1 as usize, p2 as usize,
-                &mut |pct, fit, _hist| {
-                    // 发送进度更新
-                    tx.send(ProgressUpdate::Progress(pct, fit)).unwrap_or(());
-                },
-            );
-            (res, history)
-        }
+AlgoId::GA => {
+let (res, history) = pack_ga(
+&tagged, bw, bh, kerf, ar,
+p1 as usize, p2 as usize,
+&mut |pct, fit, _hist| {
+// 发送进度更新
+tx.send(ProgressUpdate::Progress(pct, fit)).unwrap_or(());
+},
+);
+(res, history)
+}
 
-        AlgoId::SA => {
-            let (res, history) = pack_sa(
-                &tagged, bw, bh, kerf, ar,
-                p1, p2 as usize,
-                &mut |pct, fit, _hist| {
-                    tx.send(ProgressUpdate::Progress(pct, fit)).unwrap_or(());
-                },
-            );
-            (res, history)
-        }
+AlgoId::SA => {
+let (res, history) = pack_sa(
+&tagged, bw, bh, kerf, ar,
+p1, p2 as usize,
+&mut |pct, fit, _hist| {
+tx.send(ProgressUpdate::Progress(pct, fit)).unwrap_or(());
+},
+);
+(res, history)
+}
 
-        AlgoId::SVGNest => {
-            let (res, history) = pack_svgnest(
-                &tagged, bw, bh, kerf, ar,
-                p1 as usize, p2 as usize,
-                &mut |pct, fit, _hist| {
-                    tx.send(ProgressUpdate::Progress(pct, fit)).unwrap_or(());
-                },
-            );
-            (res, history)
-        }
-    };
+AlgoId::SVGNest => {
+    let (res, history) = pack_svgnest(
+        &tagged, bw, bh, kerf, ar,
+        p1 as usize, p2 as usize,
+        &mut |pct, fit, _hist| {
+            tx.send(ProgressUpdate::Progress(pct, fit)).unwrap_or(());
+        },
+    );
+    (res, history)
+}
+};
 
-    let elapsed = t0.elapsed().as_millis();
+let elapsed = t0.elapsed().as_millis();
 
-    // 发送完成消息
-    tx.send(ProgressUpdate::Complete(result, hist, elapsed, bw, bh)).unwrap_or(());
+// 发送完成消息
+tx.send(ProgressUpdate::Complete(result, hist, elapsed, bw, bh)).unwrap_or(());
 });
 }
 
@@ -481,378 +481,428 @@ crate::ui::draw_header(
 
 // ── Left Sidebar ──
 egui::SidePanel::left("sidebar")
-    .exact_width(330.0)
+    .exact_width(330.0) // 侧边栏宽度
     .frame(egui::Frame {
-        fill: SF,
-        inner_margin: egui::Margin::same(0.0),
-        stroke: Stroke::new(1.0, BD),
+        fill: SF, // 背景色
+        inner_margin: egui::Margin::same(0.0), // 内边距
+        stroke: Stroke::new(1.0, BD), // 边框颜色
         ..Default::default()
     })
     .show(ctx, |ui| {
-egui::ScrollArea::vertical().id_salt("sb_scroll").show(ui, |ui| {
-ui.add_space(10.0);
-let margin = egui::Margin::symmetric(13.0, 0.0);
+        egui::ScrollArea::vertical()
+            .id_salt("sb_scroll")
 
-// Board config
-egui::Frame::none().inner_margin(margin).show(ui, |ui| {
-    section_header(ui, "木板规格（无限供应）");
-    egui::Grid::new("board_cfg")
-        .num_columns(2)
-        .spacing([6.0, 4.0])
-        .show(ui, |ui| {
-            field_row(ui, "长度 mm", &mut self.board_w);
-            ui.end_row();
-            field_row(ui, "宽度 mm", &mut self.board_h);
-            ui.end_row();
-            field_row(ui, "锯缝 mm", &mut self.kerf);
-            ui.end_row();
-            ui.label(RichText::new("允许旋转").size(9.0).color(TX2).monospace());
-            ui.checkbox(&mut self.allow_rotate, "");
-            ui.end_row();
-        });
-});
-
-ui.add_space(8.0);
-
-// Algorithm selector
-egui::Frame::none().inner_margin(margin).show(ui, |ui| {
-    section_header(ui, "排样算法");
-    let algos = [
-        AlgoId::MaxRects,
-        AlgoId::Guillotine,
-        AlgoId::BottomLeft,
-        AlgoId::NfpGreedy,
-        AlgoId::SA,
-        AlgoId::GA,
-        AlgoId::SVGNest,
-    ];
-    for algo in algos {
-        let selected = self.algo == algo;
-        let badge_color = match algo {
-            AlgoId::MaxRects | AlgoId::Guillotine | AlgoId::BottomLeft => OK,
-            AlgoId::SA | AlgoId::GA | AlgoId::NfpGreedy => INFO,
-            AlgoId::SVGNest => ACC,
-        };
-        let frame_stroke =
-            if selected { Stroke::new(1.0, ACC) } else { Stroke::new(1.0, BD) };
-        let frame_fill = if selected {
-            Color32::from_rgba_unmultiplied(212, 168, 83, 15)
-        } else {
-            Color32::TRANSPARENT
-        };
-
-        let resp = egui::Frame::none()
-            .fill(frame_fill)
-            .stroke(frame_stroke)
-            .inner_margin(egui::Margin::symmetric(9.0, 6.0))
             .show(ui, |ui| {
-                ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
-                    let (dot_rect, _) = ui.allocate_exact_size(
-                        Vec2::new(12.0, 12.0),
-                        egui::Sense::hover(),
-                    );
-                    let painter = ui.painter();
-                    painter.circle_stroke(
-                        dot_rect.center(),
-                        5.0,
-                        Stroke::new(1.5, if selected { ACC } else { TX2 }),
-                    );
-                    if selected {
-                        painter.circle_filled(dot_rect.center(), 2.5, ACC);
-                    }
-                    ui.add_space(4.0);
-                    ui.vertical(|ui| {
-                        ui.label(
-                            RichText::new(algo.label())
-                                .size(10.0)
-                                .color(TX)
-                                .strong()
-                                .monospace(),
-                        );
-                        ui.label(RichText::new(algo.desc()).size(8.0).color(TX2));
-                    });
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
-                        egui::Frame::none()
-                            .fill(Color32::from_rgba_unmultiplied(
-                                badge_color.r(), badge_color.g(), badge_color.b(), 30,
-                            ))
-                            .stroke(Stroke::new(
-                                1.0,
-                                Color32::from_rgba_unmultiplied(
-                                    badge_color.r(), badge_color.g(), badge_color.b(), 80,
-                                ),
-                            ))
-                            .inner_margin(egui::Margin::symmetric(5.0, 1.0))
-                            .rounding(Rounding::same(2.0))
-                            .show(ui, |ui| {
-                                ui.label(
-                                    RichText::new(algo.badge())
-                                        .size(7.0)
-                                        .color(badge_color)
-                                        .monospace(),
-                                );
-                            });
-                    });
+
+                ui.add_space(10.0);
+                let margin = egui::Margin::symmetric(13.0, 0.0);
+
+                // Board config
+                egui::Frame::none().inner_margin(margin).show(ui, |ui| {
+                    section_header(ui, "木板规格（无限供应）");
+                    egui::Grid::new("board_cfg")
+                        .num_columns(2)
+                        .spacing([6.0, 4.0])
+                        .show(ui, |ui| {
+                            field_row(ui, "长度 mm", &mut self.board_w);
+                            ui.end_row();
+                            field_row(ui, "宽度 mm", &mut self.board_h);
+                            ui.end_row();
+                            field_row(ui, "锯缝 mm", &mut self.kerf);
+                            ui.end_row();
+                            ui.label(RichText::new("允许旋转").size(9.0).color(TX2).monospace());
+                            ui.checkbox(&mut self.allow_rotate, "");
+                            ui.end_row();
+                        });
                 });
-            });
 
-        if ui
-            .interact(
-                resp.response.rect,
-                egui::Id::new(format!("algo_{:?}", algo)),
-                egui::Sense::click(),
-            )
-            .clicked()
-        {
-            self.algo = algo;
-            self.p1 = algo.default_p1().to_string();
-            self.p2 = algo.default_p2().to_string();
-        }
-        ui.add_space(3.0);
-    }
+                ui.add_space(8.0);
 
-    // Meta params
-    if self.algo.has_meta() {
-        ui.add_space(4.0);
-        egui::Frame::none()
-            .fill(SF2)
-            .stroke(Stroke::new(1.0, BD))
-            .inner_margin(egui::Margin::symmetric(9.0, 7.0))
-            .show(ui, |ui| {
-                section_header(ui, "参数");
-                egui::Grid::new("meta_params")
-                    .num_columns(2)
-                    .spacing([6.0, 4.0])
-                    .show(ui, |ui| {
-                        field_row(ui, self.algo.p1_label(), &mut self.p1);
-                        ui.end_row();
-                        field_row(ui, self.algo.p2_label(), &mut self.p2);
-                        ui.end_row();
-                    });
-            });
-    }
-});
+                // Algorithm selector
+                // 算法列表
+                egui::Frame::none().inner_margin(margin).show(ui, |ui| {
+                    section_header(ui, "排样算法");
+                    let algos = [
+                        AlgoId::MaxRects,
+                        AlgoId::Guillotine,
+                        AlgoId::BottomLeft,
+                        AlgoId::NfpGreedy,
+                        AlgoId::SA,
+                        AlgoId::GA,
+                        AlgoId::SVGNest,
+                    ];
+                    for algo in algos {
+                        let selected = self.algo == algo;
+                        let badge_color = match algo {
+                            AlgoId::MaxRects | AlgoId::Guillotine | AlgoId::BottomLeft => OK,
+                            AlgoId::SA | AlgoId::GA | AlgoId::NfpGreedy => INFO,
+                            AlgoId::SVGNest => ACC,
+                        };
+                        let frame_stroke =
+                            if selected { Stroke::new(1.0, ACC) } else { Stroke::new(1.0, BD) };
+                        let frame_fill = if selected {
+                            Color32::from_rgba_unmultiplied(212, 168, 83, 15)
+                        } else {
+                            Color32::TRANSPARENT
+                        };
 
-ui.add_space(8.0);
-
-// Shapes list
-egui::Frame::none().inner_margin(margin).show(ui, |ui| {
-    ui.horizontal(|ui| {
-        section_header(ui, "所需图形");
-        if !self.shapes.is_empty() {
-            ui.label(
-                RichText::new(format!("({})", self.shapes.len()))
-                    .size(7.0)
-                    .color(TX2),
-            );
-        }
-    });
-
-    let mut to_remove: Option<usize> = None;
-    let mut move_up: Option<usize> = None;
-    let mut move_dn: Option<usize> = None;
-
-    egui::ScrollArea::vertical()
-        .id_salt("shapes_scroll")
-        .max_height(220.0)
-        .show(ui, |ui| {
-            for (idx, s) in self.shapes.iter_mut().enumerate() {
-                let color = gc(idx);
-                egui::Frame::none()
-                    .fill(SF2)
-                    .stroke(Stroke::new(1.0, BD))
-                    .show(ui, |ui| {
-                        ui.with_layout(
-                            egui::Layout::left_to_right(egui::Align::Center),
-                            |ui| {
-                                let (strip_rect, _) = ui.allocate_exact_size(
-                                    Vec2::new(3.0, 32.0),
-                                    egui::Sense::hover(),
-                                );
-                                ui.painter().rect_filled(
-                                    strip_rect,
-                                    Rounding::ZERO,
-                                    color,
-                                );
-                                ui.add_space(4.0);
-                                ui.vertical(|ui| {
-                                    ui.label(
-                                        RichText::new("名称")
-                                            .size(7.0)
-                                            .color(TX2)
-                                            .monospace(),
+                        let resp = egui::Frame::none()
+                            .fill(frame_fill)
+                            .stroke(frame_stroke)
+                            .inner_margin(egui::Margin::symmetric(9.0, 6.0))
+                            .show(ui, |ui| {
+                                ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+                                    let (dot_rect, _) = ui.allocate_exact_size(
+                                        Vec2::new(12.0, 12.0),
+                                        egui::Sense::hover(),
                                     );
-                                    ui.add(
-                                        egui::TextEdit::singleline(&mut s.name)
-                                            .desired_width(90.0)
-                                            .font(egui::FontId::monospace(11.0)),
+                                    let painter = ui.painter();
+                                    painter.circle_stroke(
+                                        dot_rect.center(),
+                                        5.0,
+                                        Stroke::new(1.5, if selected { ACC } else { TX2 }),
                                     );
+                                    if selected {
+                                        painter.circle_filled(dot_rect.center(), 2.5, ACC);
+                                    }
+                                    ui.add_space(4.0);
+                                    ui.vertical(|ui| {
+                                        ui.label(
+                                            RichText::new(algo.label())
+                                                .size(10.0)
+                                                .color(TX)
+                                                .strong()
+                                                .monospace(),
+                                        );
+                                        ui.label(RichText::new(algo.desc()).size(8.0).color(TX2));
+                                    });
+                                    ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+                                        egui::Frame::none()
+                                            .fill(Color32::from_rgba_unmultiplied(
+                                                badge_color.r(), badge_color.g(), badge_color.b(), 30,
+                                            ))
+                                            .stroke(Stroke::new(
+                                                1.0,
+                                                Color32::from_rgba_unmultiplied(
+                                                    badge_color.r(), badge_color.g(), badge_color.b(), 80,
+                                                ),
+                                            ))
+                                            .inner_margin(egui::Margin::symmetric(5.0, 1.0))
+                                            .rounding(Rounding::same(2.0))
+                                            .show(ui, |ui| {
+                                                ui.label(
+                                                    RichText::new(algo.badge())
+                                                        .size(7.0)
+                                                        .color(badge_color)
+                                                        .monospace(),
+                                                );
+                                            });
+                                    });
                                 });
-                                ui.separator();
-                                ui.vertical(|ui| {
-                                    ui.label(
-                                        RichText::new("宽mm")
-                                            .size(7.0)
-                                            .color(TX2)
-                                            .monospace(),
-                                    );
-                                    ui.add(
-                                        egui::TextEdit::singleline(&mut s.w)
-                                            .desired_width(48.0)
-                                            .font(egui::FontId::monospace(11.0)),
-                                    );
-                                });
-                                ui.separator();
-                                ui.vertical(|ui| {
-                                    ui.label(
-                                        RichText::new("高mm")
-                                            .size(7.0)
-                                            .color(TX2)
-                                            .monospace(),
-                                    );
-                                    ui.add(
-                                        egui::TextEdit::singleline(&mut s.h)
-                                            .desired_width(48.0)
-                                            .font(egui::FontId::monospace(11.0)),
-                                    );
-                                });
-                                ui.with_layout(
-                                    egui::Layout::right_to_left(egui::Align::Center),
-                                    |ui| {
-                                        if ui
-                                            .small_button(
-                                                RichText::new("↓").color(TX2),
-                                            )
-                                            .clicked()
-                                        {
-                                            move_dn = Some(idx);
-                                        }
-                                        if ui
-                                            .small_button(
-                                                RichText::new("✕").color(ERR),
-                                            )
-                                            .clicked()
-                                        {
-                                            to_remove = Some(idx);
-                                        }
-                                        if ui
-                                            .small_button(
-                                                RichText::new("↑").color(TX2),
-                                            )
-                                            .clicked()
-                                        {
-                                            move_up = Some(idx);
-                                        }
-                                    },
-                                );
-                            },
+                            });
+
+                        if ui
+                            .interact(
+                                resp.response.rect,
+                                egui::Id::new(format!("algo_{:?}", algo)),
+                                egui::Sense::click(),
+                            )
+                            .clicked()
+                        {
+                            self.algo = algo;
+                            self.p1 = algo.default_p1().to_string();
+                            self.p2 = algo.default_p2().to_string();
+                        }
+                        ui.add_space(3.0);
+                    }
+
+                    // Meta params
+                    if self.algo.has_meta() {
+                        ui.add_space(4.0);
+                        egui::Frame::none()
+                            .fill(SF2)
+                            .stroke(Stroke::new(1.0, BD))
+                            .inner_margin(egui::Margin::symmetric(9.0, 7.0))
+                            .show(ui, |ui| {
+                                section_header(ui, "参数");
+                                egui::Grid::new("meta_params")
+                                    .num_columns(2)
+                                    .spacing([6.0, 4.0])
+                                    .show(ui, |ui| {
+                                        field_row(ui, self.algo.p1_label(), &mut self.p1);
+                                        ui.end_row();
+                                        field_row(ui, self.algo.p2_label(), &mut self.p2);
+                                        ui.end_row();
+                                    });
+                            });
+                    }
+                });
+
+                ui.add_space(8.0);
+
+                // Shapes list
+                // 创建一个无内外边距的框架，使用指定的外边距
+                // 图形列表
+                egui::Frame::none().inner_margin(margin).show(ui, |ui| {
+                // 水平布局显示标题和图形数量
+                ui.horizontal(|ui| {
+                    section_header(ui, "所需图形");  // 显示"所需图形"标题
+                    if !self.shapes.is_empty() {
+                        // 如果图形列表不为空，显示图形数量（用小号灰色文字）
+                        ui.label(
+                            RichText::new(format!("({})", self.shapes.len()))
+                                .size(7.0)           // 字号7
+                                .color(TX2),          // 使用主题灰色
                         );
-                    });
-                ui.add_space(2.0);
-            }
-        });
+                    }
+                });
 
-    if let Some(i) = to_remove { self.shapes.remove(i); }
-    if let Some(i) = move_up { if i > 0 { self.shapes.swap(i, i - 1); } }
-    if let Some(i) = move_dn { if i + 1 < self.shapes.len() { self.shapes.swap(i, i + 1); } }
+                // 定义操作状态变量（使用Option表示是否有操作需要执行）
+                let mut to_remove: Option<usize> = None;  // 待删除的图形索引
+                let mut move_up: Option<usize> = None;    // 待上移的图形索引
+                let mut move_dn: Option<usize> = None;    // 待下移的图形索引
 
-    ui.add_space(4.0);
-    ui.horizontal(|ui| {
-        if accent_btn(ui, "＋ 添加").clicked() {
-            let id = self.shape_id_cnt;
-            self.shape_id_cnt += 1;
-            self.shapes.push(ShapeEntry {
+                // 创建垂直滚动区域，用于显示图形列表
+                egui::ScrollArea::vertical()
+                    .id_salt("shapes_scroll")     // 设置滚动区域的唯一ID
+                    .max_height(220.0)             // 最大高度220像素
+                    .show(ui, |ui| {
+                // 遍历所有图形，idx为索引，s为可变引用
+                for (idx, s) in self.shapes.iter_mut().enumerate() {
+                let color = gc(idx);    // 根据索引获取主题颜色
+
+                // 为每个图形项创建一个带边框的框架
+                egui::Frame::none()
+                    .fill(SF2)                    // 填充色（深色背景）
+                    .stroke(Stroke::new(1.0, BD)) // 边框（1像素，主题边框色）
+                    .show(ui, |ui| {
+                // 设置水平布局，垂直居中对齐
+                ui.with_layout(
+                egui::Layout::left_to_right(egui::Align::Center),
+                |ui| {
+                // 左侧彩色条纹：分配一个3x32像素的区域作为颜色标识
+                let (strip_rect, _) = ui.allocate_exact_size(
+                    Vec2::new(3.0, 32.0),
+                    egui::Sense::hover(),  // 仅用于悬停感应
+                );
+                // 绘制彩色条纹
+                ui.painter().rect_filled(
+                    strip_rect,
+                    Rounding::ZERO,        // 无圆角
+                    color,
+                );
+
+                ui.add_space(4.0);  // 添加间距
+
+                // 垂直布局：名称标签和输入框
+                ui.vertical(|ui| {
+                    // 名称标签（小号灰色文字）
+                    ui.label(
+                        RichText::new("名称")
+                            .size(7.0)
+                            .color(TX2)
+                            .monospace(),  // 等宽字体
+                    );
+                    // 名称输入框（单行文本编辑）
+                    ui.add(
+                        egui::TextEdit::singleline(&mut s.name)
+                            .desired_width(90.0)           // 宽度90像素
+                            .font(egui::FontId::monospace(11.0)),  // 等宽字体11号
+                    );
+                });
+
+                ui.separator();  // 添加分隔线
+
+                // 垂直布局：宽度标签和输入框
+                ui.vertical(|ui| {
+                    ui.label(
+                        RichText::new("宽mm")
+                            .size(7.0)
+                            .color(TX2)
+                            .monospace(),
+                    );
+                    ui.add(
+                        egui::TextEdit::singleline(&mut s.w)
+                            .desired_width(48.0)           // 较窄的输入框
+                            .font(egui::FontId::monospace(11.0)),
+                    );
+                });
+
+                ui.separator();  // 添加分隔线
+
+                // 垂直布局：高度标签和输入框
+                ui.vertical(|ui| {
+                    ui.label(
+                        RichText::new("高mm")
+                            .size(7.0)
+                            .color(TX2)
+                            .monospace(),
+                    );
+                    ui.add(
+                        egui::TextEdit::singleline(&mut s.h)
+                            .desired_width(48.0)
+                            .font(egui::FontId::monospace(11.0)),
+                    );
+                });
+
+                // 右侧按钮区域（从右向左布局）
+                ui.with_layout(
+                egui::Layout::right_to_left(egui::Align::Center),
+                |ui| {
+                // 下移按钮（↓）
+                if ui
+                    .small_button(
+                        RichText::new("↓").color(TX2),
+                    )
+                    .clicked()
+                {
+                    move_dn = Some(idx);  // 记录要下移的索引
+                }
+                // 删除按钮（✕）
+                if ui
+                    .small_button(
+                        RichText::new("✕").color(ERR),  // 使用错误主题色（红色）
+                    )
+                    .clicked()
+                {
+                    to_remove = Some(idx);  // 记录要删除的索引
+                }
+                // 上移按钮（↑）
+                if ui
+                    .small_button(
+                        RichText::new("↑").color(TX2),
+                    )
+                    .clicked()
+                {
+                move_up = Some(idx);  // 记录要上移的索引
+                }
+                },
+                );
+                },
+                );
+                let rect = ui.max_rect();
+                println!("Element {} height: {}", idx, rect.height());
+                });
+                ui.add_space(2.0);  // 每个图形项之间的间距
+                }
+                });
+
+                // 执行操作（在循环结束后统一处理，避免在迭代中修改集合）
+                if let Some(i) = to_remove {
+                self.shapes.remove(i);  // 删除指定索引的图形
+                }
+                if let Some(i) = move_up {
+                if i > 0 {
+                self.shapes.swap(i, i - 1);  // 与上一个元素交换位置（上移）
+                }
+                }
+                if let Some(i) = move_dn {
+                if i + 1 < self.shapes.len() {
+                self.shapes.swap(i, i + 1);  // 与下一个元素交换位置（下移）
+                }
+                }
+
+                ui.add_space(4.0);  // 添加间距
+
+                // 底部按钮区域（水平布局）
+                ui.horizontal(|ui| {
+                // 添加按钮（使用强调色）
+                if accent_btn(ui, "＋ 添加").clicked() {
+                let id = self.shape_id_cnt;           // 获取新ID
+                self.shape_id_cnt += 1;                // ID计数器自增
+                // 创建新的图形条目（名称默认"图形X"，宽高为空）
+                self.shapes.push(ShapeEntry {
                 id,
                 name: format!("图形{}", id),
                 w: "".into(),
                 h: "".into(),
-            });
-        }
-        if danger_btn(ui, "清空").clicked() {
-            self.shapes.clear();
-        }
-    });
-});
+                });
+                }
+                // 清空按钮（使用危险色）
+                if danger_btn(ui, "清空").clicked() {
+                self.shapes.clear();  // 清空所有图形
+                }
+                });
+                });
+                ui.add_space(8.0);
 
-ui.add_space(8.0);
-
-// Import
-egui::Frame::none().inner_margin(margin).show(ui, |ui| {
-    section_header(ui, "导入数据");
-    if secondary_btn(ui, "📂 导入 .txt（名称,宽,高 每行）").clicked() {
-        let path = rfd::FileDialog::new()
-            .add_filter("文本文件", &["txt", "csv"])
-            .pick_file();
-        if let Some(p) = path {
-            if let Ok(content) = std::fs::read_to_string(&p) {
+                // Import
+                egui::Frame::none().inner_margin(margin).show(ui, |ui| {
+                section_header(ui, "导入数据");
+                if secondary_btn(ui, "📂 导入 .txt（名称,宽,高 每行）").clicked() {
+                let path = rfd::FileDialog::new()
+                .add_filter("文本文件", &["txt", "csv"])
+                .pick_file();
+                if let Some(p) = path {
+                if let Ok(content) = std::fs::read_to_string(&p) {
                 let mut n = 0;
                 for line in content.lines() {
-                    let t = line.trim();
-                    if t.is_empty() || t.starts_with('#') { continue; }
-                    let parts: Vec<&str> = t
-                        .split([',', ';', '\t'])
-                        .map(str::trim)
-                        .filter(|s| !s.is_empty())
-                        .collect();
-                    if parts.len() >= 3 {
-                        self.add_shape(parts[0], parts[1], parts[2]);
-                        n += 1;
-                    } else if parts.len() == 2 {
-                        self.add_shape("", parts[0], parts[1]);
-                        n += 1;
-                    }
+                let t = line.trim();
+                if t.is_empty() || t.starts_with('#') { continue; }
+                let parts: Vec<&str> = t
+                .split([',', ';', '\t'])
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .collect();
+                if parts.len() >= 3 {
+                self.add_shape(parts[0], parts[1], parts[2]);
+                n += 1;
+                } else if parts.len() == 2 {
+                self.add_shape("", parts[0], parts[1]);
+                n += 1;
+                }
                 }
                 if n > 0 {
-                    self.error_msg = Some(format!("✅ 成功导入 {} 个图形", n));
+                self.error_msg = Some(format!("✅ 成功导入 {} 个图形", n));
                 }
-            }
-        }
-    }
-});
+                }
+                }
+                }
+                });
 
-ui.add_space(8.0);
+                ui.add_space(8.0);
 
-// Actions
-egui::Frame::none()
-.inner_margin(egui::Margin::symmetric(13.0, 10.0))
-.show(ui, |ui| {
-// let running = self.state == ComputeState::Running;
-ui.add_enabled_ui(self.state != ComputeState::Running, |ui| {
-if ui.add_sized(
-[ui.available_width(), 36.0],
-egui::Button::new(
-egui::RichText::new("▶ 开始优化计算")
-.size(13.0)
-.color(egui::Color32::BLACK)
-.strong(),
-).fill(ACC),
-).clicked() {
-self.run_compute(ctx.clone());  // 传入ctx
-}
-});
-// 动态显示进度条
-if self.state != ComputeState::Running {
-ui.add(egui::ProgressBar::new(self.progress as f32)
-.animate(true)
-.text(format!("计算进度: {:.1}%", self.progress as f32 * 100.0)));
-}
+        // Actions
+        egui::Frame::none()
+            .inner_margin(egui::Margin::symmetric(13.0, 10.0))
+            .show(ui, |ui| {
+                // let running = self.state == ComputeState::Running;
+                ui.add_enabled_ui(self.state != ComputeState::Running, |ui| {
+                    if ui.add_sized(
+                        [ui.available_width(), 36.0],
+                        egui::Button::new(
+                            egui::RichText::new("▶ 开始优化计算")
+                                .size(13.0)
+                                .color(egui::Color32::BLACK)
+                                .strong(),)
+                                .fill(ACC),)
+                                .clicked() {
+                                    self.run_compute(ctx.clone());  // 传入ctx
+                                }
+                        });
+                        // 动态显示进度条
+                        if self.state != ComputeState::Running {
+                        ui.add(egui::ProgressBar::new(self.progress as f32)
+                        .animate(true)
+                        .text(format!("计算进度: {:.1}%", self.progress as f32 * 100.0)));
+                        }
 
-// // 动态显示消息列表
-// egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
-//     for msg in &self.messages {
-//         ui.label(msg);
-//     }
-// });
+                        // // 动态显示消息列表
+                        // egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
+                        //     for msg in &self.messages {
+                        //         ui.label(msg);
+                        //     }
+                        // });
 
-ui.add_space(4.0);
-ui.horizontal(|ui| {
-if secondary_btn(ui, "示例数据").clicked() {
-self.load_example();
-}
-if secondary_btn(ui, "清除结果").clicked() {
-self.reset_all();
-}
-});
+                        ui.add_space(4.0);
+                        ui.horizontal(|ui| {
+                            if secondary_btn(ui, "示例数据").clicked() {
+                                self.load_example();
+                            }
+                            if secondary_btn(ui, "清除结果").clicked() {
+                                self.reset_all();
+                            }
+                        });
 
 if let Some(ref msg) = self.error_msg.clone() {
 ui.add_space(4.0);
