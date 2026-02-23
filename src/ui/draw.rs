@@ -1,7 +1,6 @@
 use eframe::egui::{self, Color32, FontId, Painter, Pos2, Rect, Rounding, Stroke, Vec2};
 use crate::core::Board;
 use crate::ui::theme::gc;
-use egui::epaint::PathStroke;
 use egui::Align2;
 use egui::Shape;
 
