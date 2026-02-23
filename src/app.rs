@@ -260,7 +260,7 @@ impl eframe::App for WoodCutterApp {
         style.spacing.item_spacing = Vec2::new(6.0, 4.0);
         style.spacing.window_margin = egui::Margin::same(0.0);
         ctx.set_style(style);
-
+        crate::ui::draw_menu(ctx);
         // ── Top Header ──
         crate::ui::draw_header(
             ctx,
