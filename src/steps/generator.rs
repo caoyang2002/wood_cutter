@@ -65,7 +65,7 @@ pub fn generate_steps(boards: &[Board], bw: f64, bh: f64, algo_label: &str) -> V
                 if bi < boards.len() - 1 {
                     format!("→ 仍有图形未完，自动开启第 {} 块", bi + 2)
                 } else {
-                    format!("→ 🎉 全部 {} 个图形切割完成！", total)
+                    format!("→ 全部 {} 个图形切割完成！", total)
                 }
             ),
             snap: done_snap,
