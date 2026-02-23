@@ -16,6 +16,10 @@ rand = "0.8"
 serde = { version = "1", features = ["derive"] }
 rfd = "0.15"
 
+nfp = "0.3.3"          # 用于 NFP 计算
+binpack2d = "0.2.0"    # 用于 MaxRects 算法
+
+
 [profile.release]
 opt-level = 3
 lto = true
