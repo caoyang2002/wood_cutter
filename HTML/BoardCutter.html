@@ -1,0 +1,2335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>木板分割优化 Pro</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+    :root {
+      --bg: #0c0c0c;
+      --sf: #151515;
+      --sf2: #1c1c1c;
+      --sf3: #232323;
+      --bd: #2a2a2a;
+      --bd2: #3a3a3a;
+      --acc: #d4a853;
+      --acc2: #8b6914;
+      --acc3: #f0c060;
+      --tx: #e0d8cc;
+      --tx2: #7a6a58;
+      --tx3: #444;
+      --err: #c0392b;
+      --err2: #7a2520;
+      --ok: #27ae60;
+      --info: #2980b9;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--tx);
+      font-family: 'Noto Serif SC', serif;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hdr {
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--bd);
+      padding: 10px 22px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--sf);
+    }
+
+    .hdr h1 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--acc);
+      letter-spacing: 2px;
+    }
+
+    .hdr-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: var(--tx2);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .hdr-sp {
+      flex: 1;
+    }
+
+    .hdr-stats {
+      display: flex;
+      gap: 16px;
+    }
+
+    .hst {
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .hst-v {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--acc);
+    }
+
+    .hst-l {
+      font-size: 7px;
+      color: var(--tx2);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .app {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 330px 1fr;
+      overflow: hidden;
+    }
+
+    /* SIDEBAR */
+    .sb {
+      border-right: 1px solid var(--bd);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--sf);
+    }
+
+    .sb-sc {
+      flex: 1;
+      overflow-y: auto;
+      padding: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+    }
+
+    .sb-ft {
+      flex-shrink: 0;
+      padding: 10px 13px;
+      border-top: 1px solid var(--bd);
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .sec {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--acc);
+      border-bottom: 1px solid var(--bd);
+      padding-bottom: 5px;
+      margin-bottom: 7px;
+    }
+
+    .g2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .fld {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .fld label {
+      font-size: 9px;
+      color: var(--tx2);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .fld input,
+    .fld select {
+      background: var(--sf2);
+      border: 1px solid var(--bd);
+      color: var(--tx);
+      padding: 5px 7px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      outline: none;
+      width: 100%;
+      transition: border-color .2s;
+    }
+
+    .fld input:focus,
+    .fld select:focus {
+      border-color: var(--acc);
+    }
+
+    /* Algo cards */
+    .algo-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .ac {
+      border: 1px solid var(--bd);
+      padding: 6px 9px;
+      cursor: pointer;
+      transition: all .15s;
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+    }
+
+    .ac:hover {
+      border-color: var(--bd2);
+    }
+
+    .ac.sel {
+      border-color: var(--acc);
+      background: rgba(212, 168, 83, 0.06);
+    }
+
+    .ac-radio {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      border: 1.5px solid var(--tx2);
+      flex-shrink: 0;
+      margin-top: 2px;
+      position: relative;
+    }
+
+    .ac.sel .ac-radio {
+      border-color: var(--acc);
+    }
+
+    .ac.sel .ac-radio::after {
+      content: '';
+      position: absolute;
+      inset: 2px;
+      background: var(--acc);
+      border-radius: 50%;
+    }
+
+    .ac-info {
+      flex: 1;
+    }
+
+    .ac-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--tx);
+      font-weight: 600;
+    }
+
+    .ac-desc {
+      font-size: 8px;
+      color: var(--tx2);
+      margin-top: 1px;
+      line-height: 1.5;
+    }
+
+    .ac-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 7px;
+      padding: 1px 5px;
+      border-radius: 2px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .b-fast {
+      background: rgba(39, 174, 96, .12);
+      color: var(--ok);
+      border: 1px solid rgba(39, 174, 96, .3);
+    }
+
+    .b-good {
+      background: rgba(41, 128, 185, .12);
+      color: var(--info);
+      border: 1px solid rgba(41, 128, 185, .3);
+    }
+
+    .b-best {
+      background: rgba(212, 168, 83, .12);
+      color: var(--acc);
+      border: 1px solid rgba(212, 168, 83, .3);
+    }
+
+    .meta-p {
+      background: var(--sf2);
+      border: 1px solid var(--bd);
+      padding: 7px 9px;
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      margin-top: 4px;
+    }
+
+    .meta-p.vis {
+      display: flex;
+    }
+
+    /* Shapes */
+    .shapes-area {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      overflow-y: auto;
+      max-height: 250px;
+    }
+
+    .sr {
+      display: flex;
+      align-items: stretch;
+      border: 1px solid var(--bd);
+      background: var(--sf2);
+      animation: si .15s ease;
+      transition: border-color .15s;
+    }
+
+    .sr:hover {
+      border-color: #404040;
+    }
+
+    .sr.ed {
+      border-color: var(--acc);
+    }
+
+    @keyframes si {
+      from {
+        opacity: 0;
+        transform: translateY(-4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .sr-cb {
+      width: 3px;
+      flex-shrink: 0;
+    }
+
+    .sr-fields {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 48px 48px;
+    }
+
+    .sr-f {
+      display: flex;
+      flex-direction: column;
+      padding: 3px 5px;
+      border-right: 1px solid var(--bd);
+    }
+
+    .sr-f:last-child {
+      border-right: none;
+    }
+
+    .sr-fl {
+      font-size: 7px;
+      color: var(--tx2);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 1px;
+    }
+
+    .sr-f input {
+      background: transparent;
+      border: none;
+      color: var(--tx);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 0;
+      width: 100%;
+      outline: none;
+    }
+
+    .sr-acts {
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--bd);
+      flex-shrink: 0;
+    }
+
+    .sr-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--tx2);
+      cursor: pointer;
+      font-size: 8px;
+      padding: 0 5px;
+      transition: all .15s;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .sr-btn:hover {
+      color: var(--tx);
+      background: rgba(255, 255, 255, .05);
+    }
+
+    .sr-btn.dl:hover {
+      color: var(--err);
+      background: rgba(192, 57, 43, .1);
+    }
+
+    .sr-btn+.sr-btn {
+      border-top: 1px solid var(--bd);
+    }
+
+    .btn {
+      padding: 6px 11px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      border: none;
+      transition: all .2s;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .bp {
+      background: var(--acc);
+      color: #000;
+      font-weight: 600;
+    }
+
+    .bp:hover {
+      background: var(--acc3);
+    }
+
+    .bs {
+      background: transparent;
+      border: 1px solid var(--bd);
+      color: var(--tx2);
+    }
+
+    .bs:hover {
+      border-color: var(--acc);
+      color: var(--acc);
+    }
+
+    .bd-btn {
+      background: transparent;
+      border: 1px solid var(--err2);
+      color: var(--err);
+    }
+
+    .bd-btn:hover {
+      background: rgba(192, 57, 43, .1);
+    }
+
+    .btn-full {
+      width: 100%;
+    }
+
+    .btn:disabled {
+      opacity: .3;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 5px;
+    }
+
+    .fzone {
+      border: 1px dashed var(--bd);
+      padding: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .2s;
+      font-size: 8px;
+      color: var(--tx2);
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1.8;
+    }
+
+    .fzone:hover {
+      border-color: var(--acc);
+      color: var(--acc);
+    }
+
+    input[type=file] {
+      display: none;
+    }
+
+    /* CONTENT */
+    .content {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .comp-bar {
+      flex-shrink: 0;
+      background: var(--sf2);
+      border-bottom: 1px solid var(--bd);
+      padding: 7px 18px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .comp-bar.vis {
+      display: flex;
+    }
+
+    .spin {
+      width: 13px;
+      height: 13px;
+      border: 2px solid var(--bd2);
+      border-top-color: var(--acc);
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .comp-txt {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: var(--tx2);
+      flex: 1;
+    }
+
+    .comp-trk {
+      flex: 1;
+      height: 2px;
+      background: var(--bd);
+    }
+
+    .comp-fill {
+      height: 100%;
+      background: var(--acc);
+      transition: width .1s;
+    }
+
+    .comp-pct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: var(--acc);
+    }
+
+    .ctrl {
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--bd);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--sf);
+    }
+
+    .ctrl.hidden {
+      display: none;
+    }
+
+    .pw {
+      flex: 1;
+      height: 2px;
+      background: var(--bd);
+    }
+
+    .pf {
+      height: 100%;
+      background: var(--acc);
+      transition: width .2s;
+    }
+
+    .sc {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px;
+      color: var(--tx2);
+      padding: 4px 8px;
+      border: 1px solid var(--bd);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .boards-sc {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+    }
+
+    .empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--tx2);
+    }
+
+    .empty-icon {
+      font-size: 40px;
+      opacity: .2;
+    }
+
+    .empty-txt {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 1px;
+      text-align: center;
+      line-height: 2.5;
+    }
+
+    .bc {
+      background: var(--sf);
+      border: 1px solid var(--bd);
+    }
+
+    .bc.active-bc {
+      border-color: var(--acc);
+    }
+
+    .bch {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--bd);
+      background: var(--sf2);
+    }
+
+    .bct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--acc);
+      text-transform: uppercase;
+    }
+
+    .bcm {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px;
+      color: var(--tx2);
+      margin-left: auto;
+      display: flex;
+      gap: 11px;
+    }
+
+    .ub {
+      width: 50px;
+      height: 2px;
+      background: var(--bd);
+      align-self: center;
+      flex-shrink: 0;
+    }
+
+    .uf {
+      height: 100%;
+      background: var(--ok);
+      transition: width .4s;
+    }
+
+    .board-body {
+      padding: 9px;
+    }
+
+    .cwrap {
+      position: relative;
+      line-height: 0;
+    }
+
+    canvas {
+      display: block;
+      cursor: crosshair;
+      max-width: 100%;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
+    }
+
+    .li {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 7px;
+      color: var(--tx2);
+    }
+
+    .ld {
+      width: 7px;
+      height: 7px;
+      border-radius: 1px;
+      flex-shrink: 0;
+    }
+
+    .step-log {
+      background: var(--sf2);
+      border: 1px solid var(--bd);
+      border-left: 3px solid var(--acc);
+      padding: 8px 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: var(--tx);
+      line-height: 1.9;
+      white-space: pre-wrap;
+    }
+
+    /* Gen convergence chart */
+    .gen-chart-wrap {
+      background: var(--sf2);
+      border: 1px solid var(--bd);
+      padding: 8px 12px;
+    }
+
+    .gen-chart-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px;
+      color: var(--tx2);
+      margin-bottom: 5px;
+      letter-spacing: 1px;
+    }
+
+    .gen-chart {
+      display: block;
+    }
+
+    #tooltip {
+      position: fixed;
+      background: rgba(6, 6, 6, .97);
+      border: 1px solid var(--acc);
+      color: var(--tx);
+      padding: 5px 9px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      pointer-events: none;
+      z-index: 9999;
+      white-space: pre;
+      display: none;
+      line-height: 1.7;
+    }
+
+    ::-webkit-scrollbar {
+      width: 3px;
+      height: 3px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #2e2e2e;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--acc2);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="hdr">
+    <h1>木板分割优化</h1>
+    <div class="hdr-sub">NFP · GA · SA · SVGNest · MaxRects</div>
+    <div class="hdr-sp"></div>
+    <div class="hdr-stats">
+      <div class="hst">
+        <div class="hst-v" id="hs-boards">—</div>
+        <div class="hst-l">木板数</div>
+      </div>
+      <div class="hst">
+        <div class="hst-v" id="hs-util">—</div>
+        <div class="hst-l">利用率</div>
+      </div>
+      <div class="hst">
+        <div class="hst-v" id="hs-shapes">—</div>
+        <div class="hst-l">图形数</div>
+      </div>
+      <div class="hst">
+        <div class="hst-v" id="hs-waste">—</div>
+        <div class="hst-l">废料m²</div>
+      </div>
+      <div class="hst">
+        <div class="hst-v" id="hs-time">—</div>
+        <div class="hst-l">耗时ms</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="app">
+    <div class="sb">
+      <div class="sb-sc">
+
+        <div>
+          <div class="sec">木板规格（无限供应）</div>
+          <div class="g2">
+            <div class="fld"><label>长度 mm</label><input type="number" id="boardW" value="2440" min="1"></div>
+            <div class="fld"><label>宽度 mm</label><input type="number" id="boardH" value="1220" min="1"></div>
+            <div class="fld"><label>锯缝 mm</label><input type="number" id="kerf" value="3" min="0" max="50"></div>
+            <div class="fld"><label>允许旋转</label>
+              <select id="allowRotate">
+                <option value="1" selected>是</option>
+                <option value="0">否</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <!-- 算法 -->
+        <div>
+          <div class="sec">排样算法</div>
+          <div class="algo-grid" id="algoGrid">
+
+            <div class="ac sel" data-algo="maxrects" onclick="selAlgo(this)">
+              <div class="ac-radio"></div>
+              <div class="ac-info">
+                <div class="ac-name">MaxRects 最大矩形</div>
+                <div class="ac-desc">BSSF贪心，维护所有自由矩形，工业级标准算法</div>
+              </div>
+              <div class="ac-badge b-fast">通用矩形</div>
+            </div>
+
+            <div class="ac" data-algo="guillotine" onclick="selAlgo(this)">
+              <div class="ac-radio"></div>
+              <div class="ac-info">
+                <div class="ac-name">Guillotine 断头台</div>
+                <div class="ac-desc">模拟锯切，每刀产生两个矩形区域，贴近实际切割</div>
+              </div>
+              <div class="ac-badge b-fast">快速切割</div>
+            </div>
+
+            <div class="ac" data-algo="bottomleft" onclick="selAlgo(this)">
+              <div class="ac-radio"></div>
+              <div class="ac-info">
+                <div class="ac-name">Bottom-Left 天际线</div>
+                <div class="ac-desc">图形靠左下紧凑放置，维护天际线高度图</div>
+              </div>
+              <div class="ac-badge b-fast">实时性高</div>
+            </div>
+
+            <div class="ac" data-algo="nfp_greedy" onclick="selAlgo(this)">
+              <div class="ac-radio"></div>
+              <div class="ac-info">
+                <div class="ac-name">NFP 临界多边形贪心</div>
+                <div class="ac-desc">精确计算No-Fit Polygon边界，从所有接触点选最优位置</div>
+              </div>
+              <div class="ac-badge b-good">极限利用率（理论）</div>
+            </div>
+
+            <div class="ac" data-algo="sa" onclick="selAlgo(this)">
+              <div class="ac-radio"></div>
+              <div class="ac-info">
+                <div class="ac-name">SA 模拟退火</div>
+                <div class="ac-desc">以概率接受较差解跳出局部最优，在MaxRects基础上搜索更优排列</div>
+              </div>
+              <div class="ac-badge b-good">中等规模优化</div>
+            </div>
+
+            <div class="ac" data-algo="ga" onclick="selAlgo(this)">
+              <div class="ac-radio"></div>
+              <div class="ac-info">
+                <div class="ac-name">GA 遗传算法</div>
+                <div class="ac-desc">OX交叉+精英保留，使用MaxRects评估适应度，搜索全局最优排列</div>
+              </div>
+              <div class="ac-badge b-good">大规模搜索</div>
+            </div>
+
+            <div class="ac" data-algo="svgnest" onclick="selAlgo(this)">
+              <div class="ac-radio"></div>
+              <div class="ac-info">
+                <div class="ac-name">SVGNest 算法</div>
+                <div class="ac-desc">GA进化顺序 + NFP精确接触定位 + 最低重心评分</div>
+              </div>
+              <div class="ac-badge b-best">复杂图形约束</div>
+            </div>
+
+          </div>
+
+          <div class="meta-p" id="metaP">
+            <div class="sec">参数</div>
+            <div class="g2">
+              <div class="fld"><label id="p1l">种群/温度</label><input type="number" id="p1" value="20" min="5" max="500">
+              </div>
+              <div class="fld"><label id="p2l">代数/步数</label><input type="number" id="p2" value="80" min="10" max="2000">
+              </div>
+            </div>
+            <div style="font-size:8px;color:var(--tx2);font-family:'JetBrains Mono',monospace;line-height:1.7;"
+              id="metaHint"></div>
+          </div>
+        </div>
+        <!-- 图形 -->
+        <div>
+          <div class="sec">所需图形 <span id="scl" style="color:var(--tx2);font-size:7px;"></span></div>
+          <div class="shapes-area" id="shapesList"></div>
+          <div class="btn-row" style="margin-top:5px;">
+            <button class="btn bs" style="flex:1;" onclick="addShape()">＋ 添加</button>
+            <button class="btn bd-btn" onclick="clearShapes()">清空</button>
+          </div>
+        </div>
+        <!-- 导入 -->
+        <div>
+          <div class="sec">导入数据</div>
+          <label class="fzone" for="fileInput">📂 导入 .txt（名称,宽,高 每行）</label>
+          <input type="file" id="fileInput" accept=".txt,.csv" onchange="importFile(event)">
+        </div>
+
+      </div>
+      <!-- 运行 -->
+      <div class="sb-ft">
+        <button class="btn bp btn-full" style="font-size:10px;padding:9px;" onclick="run()" id="runBtn">▶
+          开始优化计算</button>
+        <div class="btn-row">
+          <button class="btn bs" style="flex:1;" onclick="loadExample()">示例数据</button>
+          <button class="btn bs" style="flex:1;" onclick="resetAll()">清除结果</button>
+        </div>
+      </div>
+    </div>
+    <!-- 右侧 -->
+    <div class="content">
+      <div class="comp-bar" id="compBar">
+        <div class="spin"></div>
+        <div class="comp-txt" id="compTxt">计算中...</div>
+        <div class="comp-trk">
+          <div class="comp-fill" id="compFill" style="width:0%"></div>
+        </div>
+        <div class="comp-pct" id="compPct">0%</div>
+      </div>
+
+      <div class="ctrl hidden" id="ctrlBar">
+        <button class="btn bs" onclick="goFirst()">⏮</button>
+        <button class="btn bs" onclick="goPrev()" id="btnP">◀ 上一步</button>
+        <div class="pw">
+          <div class="pf" id="pFill" style="width:0%"></div>
+        </div>
+        <button class="btn bs" onclick="goNext()" id="btnN">下一步 ▶</button>
+        <button class="btn bs" onclick="goLast()">⏭</button>
+        <div class="sc" id="sCtr">0/0</div>
+      </div>
+
+      <div class="boards-sc" id="boardsSc">
+        <div class="empty" id="emptyS">
+          <div class="empty-icon">🪵</div>
+          <div class="empty-txt">
+            选择算法，配置木板与图形<br>
+            点击「开始优化计算」<br>
+            <span style="color:var(--acc);">GA · SA · SVGNest · NFP · MaxRects · Guillotine · BL</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tooltip"></div>
+
+  <script>
+    'use strict';
+    // ══════════════════════════════════════════════════════════════
+    //  STATE
+    // ══════════════════════════════════════════════════════════════
+    let shapes = [], solution = null, steps = [], curStep = 0, shapeIdCnt = 1, selAlgoId = 'maxrects';
+    let genHistory = []; // for GA/SVGNest convergence chart
+
+    const COLORS = ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#1abc9c', '#3498db', '#9b59b6',
+      '#e91e63', '#ff5722', '#00bcd4', '#8bc34a', '#ff9800', '#673ab7', '#009688', '#f06292',
+      '#42a5f5', '#66bb6a', '#ffa726', '#ab47bc', '#26c6da', '#ef9a9a', '#ffcc80', '#c5e1a5', '#80deea'];
+    const gc = i => COLORS[i % COLORS.length];
+
+    // ══════════════════════════════════════════════════════════════
+    //  ALGO SELECTOR
+    // ══════════════════════════════════════════════════════════════
+    function selAlgo(card) {
+      document.querySelectorAll('.ac').forEach(c => c.classList.remove('sel'));
+      card.classList.add('sel');
+      selAlgoId = card.dataset.algo;
+      const mp = document.getElementById('metaP');
+      const p1l = document.getElementById('p1l'), p2l = document.getElementById('p2l');
+      const p1 = document.getElementById('p1'), p2 = document.getElementById('p2');
+      const hint = document.getElementById('metaHint');
+      if (selAlgoId === 'ga') {
+        mp.classList.add('vis');
+        p1l.textContent = '种群大小'; p2l.textContent = '进化代数';
+        p1.value = 30; p2.value = 100;
+        hint.textContent = '种群30·代数100 ≈ 3000次评估\n更大参数=更好结果但更慢';
+      } else if (selAlgoId === 'svgnest') {
+        mp.classList.add('vis');
+        p1l.textContent = '种群大小'; p2l.textContent = '进化代数';
+        p1.value = 20; p2.value = 60;
+        hint.textContent = 'GA顺序+NFP接触点定位\n自适应种群大小 = 基础种群数量 + (调节强度 × 种群同质化程度) × 基础种群数量【想法越统一，越要扩编引新人；想法越多元，越要精简深挖】\n自适应进化代数 = 基础代数 + (改善速度因子 × 停滞容忍度) + 最小保证代数【收获越丰厚，越要坚持不放弃；收获越惨淡，越要及时止损换地方】';
+      } else if (selAlgoId === 'sa') {
+        mp.classList.add('vis');
+        p1l.textContent = '初始温度'; p2l.textContent = '迭代步数';
+        p1.value = 1000; p2.value = 500;
+        hint.textContent = '温度越高=接受差解概率越大\n步数越多=搜索越充分';
+      } else {
+        mp.classList.remove('vis');
+        hint.textContent = '';
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  SHAPES
+    // ══════════════════════════════════════════════════════════════
+    function addShape(name, w, h, focus = true) {
+      const id = shapeIdCnt++;
+      shapes.push({ id, name: name || `图形${id}`, w: parseFloat(w) || 0, h: parseFloat(h) || 0 });
+      renderShapes(focus ? id : null);
+    }
+    function removeShape(id) { shapes = shapes.filter(s => s.id !== id); renderShapes(); }
+    function moveShape(id, dir) {
+      const i = shapes.findIndex(s => s.id === id), j = i + dir;
+      if (j < 0 || j >= shapes.length) return;
+      [shapes[i], shapes[j]] = [shapes[j], shapes[i]]; renderShapes();
+    }
+    function clearShapes() { if (shapes.length && !confirm('确认清空？')) return; shapes = []; renderShapes(); }
+    function updShape(id, field, val) {
+      const s = shapes.find(s => s.id === id); if (!s) return;
+      if (field === 'name') s.name = val; else s[field] = parseFloat(val) || 0;
+    }
+    function renderShapes(focusId = null) {
+      const list = document.getElementById('shapesList');
+      list.innerHTML = '';
+      shapes.forEach((s, i) => {
+        const color = gc(i);
+        const row = document.createElement('div');
+        row.className = 'sr'; row.id = 'sr-' + s.id;
+        row.innerHTML = `<div class="sr-cb" style="background:${color}"></div>
+      <div class="sr-fields">
+        <div class="sr-f"><div class="sr-fl">名称</div><input type="text" value="${esc(s.name)}" oninput="updShape(${s.id},'name',this.value)" onfocus="this.closest('.sr').classList.add('ed')" onblur="this.closest('.sr').classList.remove('ed')"></div>
+        <div class="sr-f"><div class="sr-fl">宽mm</div><input type="number" value="${s.w || ''}" min="1" oninput="updShape(${s.id},'w',this.value)" onfocus="this.closest('.sr').classList.add('ed')" onblur="this.closest('.sr').classList.remove('ed')"></div>
+        <div class="sr-f"><div class="sr-fl">高mm</div><input type="number" value="${s.h || ''}" min="1" oninput="updShape(${s.id},'h',this.value)" onfocus="this.closest('.sr').classList.add('ed')" onblur="this.closest('.sr').classList.remove('ed')"></div>
+      </div>
+      <div class="sr-acts">
+        <button class="sr-btn" onclick="moveShape(${s.id},-1)">↑</button>
+        <button class="sr-btn dl" onclick="removeShape(${s.id})">✕</button>
+        <button class="sr-btn" onclick="moveShape(${s.id},1)">↓</button>
+      </div>`;
+        list.appendChild(row);
+      });
+      document.getElementById('scl').textContent = shapes.length ? `(${shapes.length})` : '';
+      document.getElementById('hs-shapes').textContent = shapes.length || '—';
+      if (focusId) {
+        const row = document.getElementById('sr-' + focusId);
+        if (row) { const inp = row.querySelector('input[type="text"]'); if (inp) { inp.focus(); inp.select(); } row.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+      }
+    }
+    function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    function importFile(e) {
+      const f = e.target.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = ev => {
+        const lines = ev.target.result.split(/\r?\n/).filter(l => l.trim() && !l.trim().startsWith('#'));
+        let n = 0;
+        lines.forEach(line => {
+          const p = line.split(/[,;\t]+/).map(s => s.trim()).filter(Boolean);
+          if (p.length >= 3) { addShape(p[0], p[1], p[2], false); n++; }
+          else if (p.length === 2) { addShape(`图形${shapeIdCnt}`, p[0], p[1], false); n++; }
+        });
+        renderShapes(); if (n) alert(`成功导入 ${n} 个图形`);
+      };
+      r.readAsText(f, 'UTF-8'); e.target.value = '';
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  CORE BIN ALGORITHMS
+    // ══════════════════════════════════════════════════════════════
+    function overlaps(a, b) { return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
+    function contains(o, i) { return o.x <= i.x && o.y <= i.y && o.x + o.w >= i.x + i.w && o.y + o.h >= i.y + i.h; }
+
+    // ── MaxRects ─────────────────────────────────────────────────
+    class MaxRectsBin {
+      constructor(W, H, k) { this.W = W; this.H = H; this.k = k; this.free = [{ x: 0, y: 0, w: W, h: H }]; this.placements = []; }
+      insert(item) {
+        let best = null, bs = Infinity;
+        const try_ = (iw, ih, rot) => {
+          for (const fr of this.free) {
+            if (fr.w >= iw && fr.h >= ih) {
+              const sc = Math.min(fr.w - iw, fr.h - ih) * 1e8 + Math.max(fr.w - iw, fr.h - ih);
+              if (sc < bs) { bs = sc; best = { x: fr.x, y: fr.y, w: iw, h: ih, rotated: rot }; }
+            }
+          }
+        };
+        try_(item.w, item.h, false);
+        if (item.ar && item.w !== item.h) try_(item.h, item.w, true);
+        if (!best) return null;
+        this._split(best); this._prune();
+        return this._place(best, item);
+      }
+      _split(pl) {
+        const k = this.k, nf = [];
+        for (const fr of this.free) {
+          if (!overlaps(pl, fr)) { nf.push(fr); continue; }
+          const rw = fr.x + fr.w - pl.x - pl.w - k; if (rw > 0) nf.push({ x: pl.x + pl.w + k, y: fr.y, w: rw, h: fr.h });
+          if (pl.x > fr.x) nf.push({ x: fr.x, y: fr.y, w: pl.x - fr.x, h: fr.h });
+          const bh = fr.y + fr.h - pl.y - pl.h - k; if (bh > 0) nf.push({ x: fr.x, y: pl.y + pl.h + k, w: fr.w, h: bh });
+          if (pl.y > fr.y) nf.push({ x: fr.x, y: fr.y, w: fr.w, h: pl.y - fr.y });
+        }
+        this.free = nf.filter(r => r.w > 0 && r.h > 0);
+      }
+      _prune() { this.free = this.free.filter((a, i) => !this.free.some((b, j) => i !== j && contains(b, a))); }
+      _place(pos, item) { const p = { ...pos, name: item.name, colorIdx: item.colorIdx, shapeId: item.id }; this.placements.push(p); return p; }
+    }
+
+    // ── Guillotine ───────────────────────────────────────────────
+    class GuillotineBin {
+      constructor(W, H, k) { this.W = W; this.H = H; this.k = k; this.free = [{ x: 0, y: 0, w: W, h: H }]; this.placements = []; }
+      insert(item) {
+        let best = null, bfr = null, bs = Infinity;
+        const try_ = (iw, ih, rot) => {
+          for (const fr of this.free) {
+            if (fr.w >= iw && fr.h >= ih) {
+              const sc = fr.w * fr.h - iw * ih;
+              if (sc < bs) { bs = sc; bfr = fr; best = { x: fr.x, y: fr.y, w: iw, h: ih, rotated: rot }; }
+            }
+          }
+        };
+        try_(item.w, item.h, false);
+        if (item.ar && item.w !== item.h) try_(item.h, item.w, true);
+        if (!best) return null;
+        const k = this.k;
+        this.free = this.free.filter(r => r !== bfr);
+        // Longer-axis split (better than fixed horizontal/vertical)
+        const rightW = bfr.w - best.w - k, botH = bfr.h - best.h - k;
+        if (rightW >= botH) {
+          if (rightW > 0) this.free.push({ x: best.x + best.w + k, y: bfr.y, w: rightW, h: bfr.h });
+          if (botH > 0) this.free.push({ x: bfr.x, y: best.y + best.h + k, w: best.w, h: botH });
+        } else {
+          if (botH > 0) this.free.push({ x: bfr.x, y: best.y + best.h + k, w: bfr.w, h: botH });
+          if (rightW > 0) this.free.push({ x: best.x + best.w + k, y: bfr.y, w: rightW, h: best.h });
+        }
+        const p = { ...best, name: item.name, colorIdx: item.colorIdx, shapeId: item.id };
+        this.placements.push(p); return p;
+      }
+    }
+
+    // ── Bottom-Left Skyline ──────────────────────────────────────
+    class BottomLeftBin {
+      constructor(W, H, k) { this.W = W; this.H = H; this.k = k; this.placements = []; this.skyline = [{ x: 0, y: 0, w: W }]; }
+      insert(item) {
+        let best = null, bestY = Infinity, bestX = Infinity;
+        const try_ = (iw, ih, rot) => {
+          for (const seg of this.skyline) {
+            // Try every valid starting x in this segment
+            for (let xi = 0; xi < 2; xi++) {
+              const cx = xi === 0 ? seg.x : Math.max(0, seg.x + seg.w - iw);
+              if (cx < 0 || cx + iw > this.W) continue;
+              const maxY = this._skyY(cx, iw);
+              if (maxY + ih > this.H) continue;
+              if (maxY < bestY || (maxY === bestY && cx < bestX)) {
+                bestY = maxY; bestX = cx; best = { x: cx, y: maxY, w: iw, h: ih, rotated: rot };
+              }
+            }
+          }
+        };
+        try_(item.w, item.h, false);
+        if (item.ar && item.w !== item.h) try_(item.h, item.w, true);
+        if (!best) return null;
+        this._updSky(best);
+        const p = { ...best, name: item.name, colorIdx: item.colorIdx, shapeId: item.id };
+        this.placements.push(p); return p;
+      }
+      _skyY(x, w) {
+        let maxY = 0;
+        for (const seg of this.skyline) {
+          if (seg.x + seg.w <= x || seg.x >= x + w) continue;
+          if (seg.y > maxY) maxY = seg.y;
+        }
+        return maxY;
+      }
+      _updSky(pl) {
+        const k = this.k, nx = pl.x, ny = pl.y + pl.h + k, nw = pl.w, newSky = [];
+        for (const seg of this.skyline) {
+          const ex = seg.x + seg.w, ne = nx + nw;
+          if (ex <= nx || seg.x >= ne) { newSky.push(seg); continue; }
+          if (seg.x < nx) newSky.push({ x: seg.x, y: seg.y, w: nx - seg.x });
+          if (ex > ne) newSky.push({ x: ne, y: seg.y, w: ex - ne });
+        }
+        newSky.push({ x: nx, y: ny, w: nw });
+        newSky.sort((a, b) => a.x - b.x);
+        const m = [];
+        for (const s of newSky) {
+          if (m.length && m[m.length - 1].y === s.y && m[m.length - 1].x + m[m.length - 1].w === s.x)
+            m[m.length - 1].w += s.w;
+          else m.push({ ...s });
+        }
+        this.skyline = m;
+      }
+    }
+
+    // ── NFP Bin (exact rectangle NFP + all contact-point candidates) ─
+    // For rectangles, NFP(A,B) boundary gives ALL positions where B
+    // touches A without overlapping. We enumerate every contact edge point.
+    class NFPBin {
+      constructor(W, H, k) { this.W = W; this.H = H; this.k = k; this.placements = []; }
+
+      insert(item) {
+        let best = null, bestScore = Infinity;
+        const tryOrient = (iw, ih, rotated) => {
+          // Inner-Fit Polygon: B's TL must lie in [0..W-iw, 0..H-ih]
+          if (iw > this.W || ih > this.H) return;
+          const IFPx2 = this.W - iw, IFPy2 = this.H - ih;
+          const cands = this._candidates(iw, ih, IFPx2, IFPy2);
+          for (const { x, y } of cands) {
+            if (x < 0 || y < 0 || x > IFPx2 || y > IFPy2) continue;
+            if (this._collides(x, y, iw, ih)) continue;
+            // Score: gravity towards bottom-left + compactness
+            // Use bounding-box gravity score (SVGNest style)
+            const score = y * this.W * 2 + x; // primary: low y, secondary: low x
+            if (score < bestScore) { bestScore = score; best = { x, y, w: iw, h: ih, rotated }; }
+          }
+        };
+        tryOrient(item.w, item.h, false);
+        if (item.ar && item.w !== item.h) tryOrient(item.h, item.w, true);
+        if (!best) return null;
+        const p = { ...best, name: item.name, colorIdx: item.colorIdx, shapeId: item.id };
+        this.placements.push(p); return p;
+      }
+
+      _candidates(iw, ih, IFPx2, IFPy2) {
+        const k = this.k;
+        // Always include IFP corners (bottom-left first)
+        const cands = [{ x: 0, y: 0 }, { x: IFPx2, y: 0 }, { x: 0, y: IFPy2 }, { x: IFPx2, y: IFPy2 }];
+        // For each placed piece, compute NFP and extract all 4 contact edges
+        // NFP(placed, moving): moving's TL traces a rectangle around placed
+        for (const pl of this.placements) {
+          // NFP boundary: TL of moving can be at these positions to touch pl
+          //   left edge:  x = pl.x - iw,  y in [pl.y-ih .. pl.y+pl.h]  ← touch right side
+          //   right edge: x = pl.x+pl.w+k, y in [pl.y-ih .. pl.y+pl.h] ← touch left side
+          //   top edge:   y = pl.y - ih,   x in [pl.x-iw .. pl.x+pl.w] ← touch bottom
+          //   bottom edge:y = pl.y+pl.h+k, x in [pl.x-iw .. pl.x+pl.w] ← touch top
+          const nfpX1 = pl.x - iw, nfpX2 = pl.x + pl.w + k;
+          const nfpY1 = pl.y - ih, nfpY2 = pl.y + pl.h + k;
+          const nfpXspan = [pl.x - iw, pl.x, pl.x + pl.w + k - iw, pl.x + pl.w + k];
+          const nfpYspan = [pl.y - ih, pl.y, pl.y + pl.h + k - ih, pl.y + pl.h + k];
+          // All 16 corner intersections + IFP boundary clipping
+          for (const x of [nfpX1, nfpX2, pl.x - iw, pl.x + pl.w]) {
+            for (const y of [nfpY1, nfpY2, pl.y - ih, pl.y + pl.h]) {
+              cands.push({ x, y });
+              // Also clip to IFP
+              cands.push({ x: Math.max(0, Math.min(IFPx2, x)), y: Math.max(0, Math.min(IFPy2, y)) });
+            }
+          }
+          // Edge-aligned positions (slide along NFP edges)
+          const xVals = [Math.max(0, nfpX1), Math.min(IFPx2, nfpX2)];
+          const yVals = [Math.max(0, nfpY1), Math.min(IFPy2, nfpY2)];
+          for (const x of xVals) for (const y of nfpYspan) cands.push({ x, y: Math.max(0, Math.min(IFPy2, y)) });
+          for (const y of yVals) for (const x of nfpXspan) cands.push({ x: Math.max(0, Math.min(IFPx2, x)), y });
+        }
+        return cands;
+      }
+
+      _collides(x, y, iw, ih) {
+        const k = this.k;
+        for (const pl of this.placements) {
+          if (x < pl.x + pl.w + k && x + iw > pl.x && y < pl.y + pl.h + k && y + ih > pl.y) return true;
+        }
+        return false;
+      }
+    }
+
+    // ── Universal packer (respects given item order — NO pre-sort) ──
+    // This is critical: GA/SA pass their own optimized order.
+    function packOrdered(BinClass, items, BW, BH, kerf, allowRotate) {
+      const unfittable = [], fittable = [];
+      items.forEach(item => {
+        const ok = (item.w <= BW && item.h <= BH) || (allowRotate && item.h <= BW && item.w <= BH);
+        (ok ? fittable : unfittable).push(item);
+      });
+      const boards = []; let remaining = [...fittable];
+      while (remaining.length > 0) {
+        const bin = new BinClass(BW, BH, kerf);
+        const leftover = [];
+        for (const item of remaining) {
+          const placed = bin.insert({ ...item, ar: allowRotate });
+          if (!placed) leftover.push(item);
+        }
+        boards.push(bin);
+        if (leftover.length === remaining.length) break;
+        remaining = leftover;
+      }
+      return { boards, unfittable };
+    }
+
+    // packWithSort: for simple algorithms, pre-sort by area descending
+    function packSorted(BinClass, items, BW, BH, kerf, allowRotate) {
+      const sorted = [...items].sort((a, b) => b.w * b.h - a.w * a.h);
+      return packOrdered(BinClass, sorted, BW, BH, kerf, allowRotate);
+    }
+
+    // ── Fitness function (shared by GA & SA) ─────────────────────
+    // Returns a score where LOWER = BETTER.
+    // Primary criterion: minimize number of boards.
+    // Secondary: maximize utilization of boards used (minimize waste ratio).
+    function fitness(boards, totalArea, BW, BH) {
+      if (!boards || boards.length === 0) return 1e9;
+      const boardArea = BW * BH;
+      // Waste on all boards except "packed" area
+      const usedArea = boards.reduce((s, b) => s + b.placements.reduce((a, p) => a + p.w * p.h, 0), 0);
+      const wasteRatio = 1 - (usedArea / (boards.length * boardArea));
+      // boards.length is integer, wasteRatio in [0,1)
+      return boards.length + wasteRatio;
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  GENETIC ALGORITHM  (fixed OX crossover, correct permutation flow)
+    // ══════════════════════════════════════════════════════════════
+    function packGA(items, BW, BH, kerf, ar, popSize, generations, onProgress) {
+      const n = items.length;
+      if (n === 0) return { boards: [], unfittable: [] };
+      const totalArea = items.reduce((s, i) => s + i.w * i.h, 0);
+
+      // eval: takes index permutation, returns packing result
+      function evalPerm(perm) {
+        // Safety: validate perm contains valid indices before use
+        const safe = perm.filter(i => i >= 0 && i < n && items[i] !== undefined);
+        if (safe.length !== n) {
+          // Fallback: rebuild a valid identity permutation for any broken genes
+          const seen = new Set(safe);
+          const fill = [...Array(n)].map((_, i) => i).filter(i => !seen.has(i));
+          let fi = 0;
+          for (let k = 0; k < n; k++) if (safe[k] === undefined) safe[k] = fill[fi++];
+        }
+        const ordered = safe.map(i => items[i]);
+        return packOrdered(MaxRectsBin, ordered, BW, BH, kerf, ar);
+      }
+      function fit(res) { return fitness(res.boards, totalArea, BW, BH); }
+
+      // Random permutation
+      function randPerm() { return [...Array(n)].map((_, i) => i).sort(() => Math.random() - .5); }
+
+      // Order-crossover (OX) — fully correct implementation
+      // Produces a valid permutation of [0..n-1] guaranteed, no -1 holes.
+      function ox(p1, p2) {
+        if (n <= 1) return [...p1];
+        const a = Math.floor(Math.random() * n);
+        const len = 1 + Math.floor(Math.random() * (n - 1));
+        const b = (a + len - 1) % n; // inclusive end, may wrap
+
+        // Collect segment indices (handles wrap-around)
+        const segSet = new Set();
+        for (let k = 0; k < len; k++) segSet.add(p1[(a + k) % n]);
+
+        // Build child: start with segment in correct positions
+        const child = new Array(n);
+        for (let k = 0; k < len; k++) child[(a + k) % n] = p1[(a + k) % n];
+
+        // Fill remaining slots in order from p2 (skip genes already in segment)
+        const remaining = p2.filter(v => !segSet.has(v)); // preserves p2's relative order
+        let ri = 0;
+        for (let k = 0; k < n; k++) {
+          const pos = (a + len + k) % n; // fill slots after segment, wrap around
+          if (child[pos] === undefined) child[pos] = remaining[ri++];
+        }
+        // Safety: if any slot still undefined (shouldn't happen), fill from remaining
+        for (let k = 0; k < n; k++) {
+          if (child[k] === undefined || child[k] === null) child[k] = remaining[ri++] ?? 0;
+        }
+        return child;
+      }
+
+      // Swap mutation
+      function mutate(perm) {
+        const p = [...perm];
+        // Apply 1-3 random swaps
+        const nm = 1 + Math.floor(Math.random() * 2);
+        for (let i = 0; i < nm; i++) {
+          const a = Math.floor(Math.random() * n), b = Math.floor(Math.random() * n);
+          [p[a], p[b]] = [p[b], p[a]];
+        }
+        return p;
+      }
+
+      // Initialize with area-sorted + random permutations
+      const areaSorted = [...Array(n)].map((_, i) => i).sort((a, b) => items[b].w * items[b].h - items[a].w * items[a].h);
+      const pop = [areaSorted, ...Array.from({ length: popSize - 1 }, randPerm)];
+
+      let evaluated = pop.map(perm => { const res = evalPerm(perm); return { perm, res, fit: fit(res) }; });
+      evaluated.sort((a, b) => a.fit - b.fit);
+      let best = { ...evaluated[0] };
+      const history = [best.fit];
+
+      for (let g = 0; g < generations; g++) {
+        if (g % 5 === 0 && onProgress) onProgress(g / generations, best.fit, history);
+
+        const nextPop = [];
+        // Elitism: top 2 survive unchanged
+        nextPop.push(evaluated[0].perm, evaluated[1]?.perm || evaluated[0].perm);
+
+        // Breed rest
+        while (nextPop.length < popSize) {
+          // Tournament selection
+          const tourney = sz => evaluated[Math.floor(Math.random() * Math.min(sz, evaluated.length))];
+          const p1 = tourney(3).perm, p2 = tourney(Math.ceil(evaluated.length / 2)).perm;
+          let child = ox(p1, p2);
+          if (Math.random() < 0.15) child = mutate(child);
+          nextPop.push(child);
+        }
+
+        evaluated = nextPop.map(perm => { const res = evalPerm(perm); return { perm, res, fit: fit(res) }; });
+        evaluated.sort((a, b) => a.fit - b.fit);
+        if (evaluated[0].fit < best.fit) best = { ...evaluated[0] };
+        history.push(best.fit);
+      }
+
+      genHistory = history;
+      return best.res;
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  SIMULATED ANNEALING  (fixed cooling schedule)
+    // ══════════════════════════════════════════════════════════════
+    /**
+     * 算法思想：模拟退火（Simulated Annealing, SA）是一种基于物理退火过程的优化算法。它通过模拟物质从高温逐渐冷却到低温的过程来寻找全局最优解。在高温时，算法允许接受较差的解，以跳出局部最优；随着温度降低，算法逐渐趋向于接受更好的解，从而收敛到全局最优或近似最优解。
+     * 适用场景：SA适用于组合优化问题，如旅行商问题、图着色问题、排程问题等，尤其是在解空间较大且存在多个局部最优解的情况下。SA通过其随机性和温度控制机制，有效地探索解空间，避免陷入局部最优。
+     * 参数说明：
+     * - items: 待打包的图形列表，每个图形包含宽度（w）和高度（h）等属性。
+     * - BW: 木板的宽度。
+     * - BH: 木板的高度。
+     * - kerf: 锯缝宽度，即切割时损失的材料宽度。
+     * - ar: 是否允许旋转图形以适应木板。
+     * - T0: 初始温度，控制算法开始时接受较差解的概率。
+     * - maxSteps: 最大迭代步数，控制算法的运行时间和收敛程度。
+     * - onProgress: 进度回调函数，接受当前进度（0到1之间）、当前最佳适应度和历史适应度数组作为参数。
+     * 返回值：返回一个对象，包含打包结果（boards）和无法适应的图形列表（unfittable）。打包结果包括每块木板上的图形放置信息。
+     */
+    function packSA(items, BW, BH, kerf, ar, T0, maxSteps, onProgress) {
+      const n = items.length;
+      if (n === 0) return { boards: [], unfittable: [] };
+      const totalArea = items.reduce((s, i) => s + i.w * i.h, 0);
+
+      function evalPerm(perm) { return packOrdered(MaxRectsBin, perm.map(i => items[i]), BW, BH, kerf, ar); }
+      function fit(res) { return fitness(res.boards, totalArea, BW, BH); }
+
+      // Start from area-sorted order (good initial solution)
+      let perm = [...Array(n)].map((_, i) => i).sort((a, b) => items[b].w * items[b].h - items[a].w * items[a].h);
+      let curRes = evalPerm(perm), curFit = fit(curRes);
+      let bestPerm = [...perm], bestRes = curRes, bestFit = curFit;
+
+      let T = T0;
+      const alpha = Math.pow(0.001, (1 / maxSteps)); // cooling: T → T0*0.001 at end
+      const history = [bestFit];
+
+      for (let i = 0; i < maxSteps; i++) {
+        if (i % 50 === 0 && onProgress) onProgress(i / maxSteps, bestFit, history);
+
+        // Neighbor: random swap, or segment reverse (2-opt style)
+        const newPerm = [...perm];
+        if (Math.random() < 0.7) {
+          // swap
+          const a = Math.floor(Math.random() * n), b = Math.floor(Math.random() * n);
+          [newPerm[a], newPerm[b]] = [newPerm[b], newPerm[a]];
+        } else {
+          // 2-opt reverse segment
+          const a = Math.floor(Math.random() * n), b = Math.floor(Math.random() * n);
+          const lo = Math.min(a, b), hi = Math.max(a, b);
+          newPerm.splice(lo, hi - lo + 1, ...newPerm.slice(lo, hi + 1).reverse());
+        }
+
+        const newRes = evalPerm(newPerm), newFit = fit(newRes);
+        const delta = newFit - curFit;
+
+        if (delta < 0 || Math.random() < Math.exp(-delta / Math.max(T, 1e-10))) {
+          perm = newPerm; curRes = newRes; curFit = newFit;
+          if (curFit < bestFit) { bestFit = curFit; bestPerm = [...perm]; bestRes = curRes; }
+        }
+
+        T *= alpha;
+        if (i % 50 === 0) history.push(bestFit);
+      }
+
+      genHistory = history;
+      return bestRes;
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  SVGNest Algorithm
+    //  GA optimizes placement ORDER, NFPBin does exact contact-point placement
+    //  Mirrors the Deepnest/SVGNest architecture for rectangles
+    // ══════════════════════════════════════════════════════════════
+    /**
+     * 算法思想：SVGNest算法是一种基于遗传算法（Genetic Algorithm, GA）的优化方法，专门用于解决二维矩形装箱问题。它通过模拟自然选择和遗传机制来优化图形的放置顺序，以最大化木板的利用率。SVGNest使用精确的接触点定位（NFPBin）来确保每个图形都以最佳方式放置在木板上，从而减少浪费。
+     * 适用场景：SVGNest算法适用于需要高效利用材料的场景，如木工、金属加工、纺织等行业中的切割优化问题。它特别适合处理大量图形和复杂约束条件的情况，通过优化放置顺序和位置，显著提高材料利用率。
+     * 参数说明：
+     * - items: 待打包的图形列表，每个图形包含宽度（w）和高度（h）等属性。
+     * - BW: 木板的宽度。
+     * - BH: 木板的高度。
+     * - kerf: 锯缝宽度，即切割时损失的材料宽度。
+     * - ar: 是否允许旋转图形以适应木板。
+     * - popSize: 遗传算法的种群大小，控制每代中解的数量。
+     * - generations: 遗传算法的迭代次数，控制算法的运行时间和收敛程度。
+     * - onProgress: 进度回调函数，接受当前进度（0到1之间）、当前最佳适应度和历史适应度数组作为参数。
+     * 返回值：返回一个对象，包含打包结果（boards）和无法适应的图形列表（unfittable）。打包结果包括每块木板上的图形放置信息。
+     */
+    function packSVGNest(items, BW, BH, kerf, ar, popSize, generations, onProgress) {
+      const n = items.length;
+      if (n === 0) return { boards: [], unfittable: [] };
+      const totalArea = items.reduce((s, i) => s + i.w * i.h, 0);
+
+      // SVGNest evaluator: uses NFPBin (exact contact-point positioning)
+      function evalPerm(perm) {
+        const safe = perm.filter(i => i >= 0 && i < n && items[i] !== undefined);
+        if (safe.length !== n) {
+          const seen = new Set(safe);
+          const fill = [...Array(n)].map((_, i) => i).filter(i => !seen.has(i));
+          let fi = 0;
+          for (let k = 0; k < n; k++) if (safe[k] === undefined) safe[k] = fill[fi++];
+        }
+        const ordered = safe.map(i => items[i]);
+        return packOrdered(NFPBin, ordered, BW, BH, kerf, ar);
+      }
+
+      // SVGNest fitness: minimize boards + gravity score
+      // (place items as low and left as possible)
+      function fit(res) {
+        if (!res.boards || res.boards.length === 0) return 1e9;
+        const boardArea = BW * BH;
+        // Gravity score: sum of (y_centroid / BH) for each piece, normalized
+        let gravity = 0, count = 0;
+        res.boards.forEach(b => b.placements.forEach(p => {
+          gravity += (p.y + p.h / 2) / BH; count++;
+        }));
+        const gravScore = count > 0 ? gravity / count : 0; // 0=all at bottom, 1=all at top
+        const usedArea = res.boards.reduce((s, b) => s + b.placements.reduce((a, p) => a + p.w * p.h, 0), 0);
+        const wasteRatio = 1 - (usedArea / (res.boards.length * boardArea));
+        return res.boards.length + wasteRatio * 0.7 + gravScore * 0.3;
+      }
+
+      function randPerm() { return [...Array(n)].map((_, i) => i).sort(() => Math.random() - .5); }
+
+      // Order-crossover (OX) — robust, same as GA
+      function ox(p1, p2) {
+        if (n <= 1) return [...p1];
+        const a = Math.floor(Math.random() * n);
+        const len = 1 + Math.floor(Math.random() * (n - 1));
+        const segSet = new Set();
+        for (let k = 0; k < len; k++) segSet.add(p1[(a + k) % n]);
+        const child = new Array(n);
+        for (let k = 0; k < len; k++) child[(a + k) % n] = p1[(a + k) % n];
+        const remaining = p2.filter(v => !segSet.has(v));
+        let ri = 0;
+        for (let k = 0; k < n; k++) {
+          const pos = (a + len + k) % n;
+          if (child[pos] === undefined) child[pos] = remaining[ri++];
+        }
+        for (let k = 0; k < n; k++) {
+          if (child[k] === undefined || child[k] === null) child[k] = remaining[ri++] ?? 0;
+        }
+        return child;
+      }
+
+      function mutate(perm) {
+        const p = [...perm];
+        // SVGNest uses segment displacement
+        if (Math.random() < 0.5) {
+          const a = Math.floor(Math.random() * n), b = Math.floor(Math.random() * n);
+          [p[a], p[b]] = [p[b], p[a]];
+        } else {
+          // Move a segment to a different position
+          const len = 1 + Math.floor(Math.random() * Math.min(3, n - 1));
+          const from = Math.floor(Math.random() * (n - len));
+          const to = Math.floor(Math.random() * (n - len));
+          const seg = p.splice(from, len);
+          p.splice(to, 0, ...seg);
+        }
+        return p;
+      }
+
+      // Initialize: include area-sorted + random
+      const areaSorted = [...Array(n)].map((_, i) => i).sort((a, b) => items[b].w * items[b].h - items[a].w * items[a].h);
+      const pop = [areaSorted, ...Array.from({ length: popSize - 1 }, randPerm)];
+
+      let evaluated = pop.map(perm => { const res = evalPerm(perm); return { perm, res, fit: fit(res) }; });
+      evaluated.sort((a, b) => a.fit - b.fit);
+      let best = { ...evaluated[0] };
+      const history = [best.fit];
+
+      for (let g = 0; g < generations; g++) {
+        if (g % 3 === 0 && onProgress) onProgress(g / generations, best.fit, history);
+
+        const nextPop = [];
+        // Keep top 2 (elitism)
+        nextPop.push(evaluated[0].perm);
+        if (evaluated[1]) nextPop.push(evaluated[1].perm);
+
+        // Fill population
+        const eliteCount = Math.max(1, Math.floor(popSize * 0.3));
+        while (nextPop.length < popSize) {
+          const p1 = evaluated[Math.floor(Math.random() * eliteCount)].perm;
+          const p2 = evaluated[Math.floor(Math.random() * evaluated.length)].perm;
+          let child = ox(p1, p2);
+          if (Math.random() < 0.2) child = mutate(child);
+          nextPop.push(child);
+        }
+
+        evaluated = nextPop.map(perm => { const res = evalPerm(perm); return { perm, res, fit: fit(res) }; });
+        evaluated.sort((a, b) => a.fit - b.fit);
+        if (evaluated[0].fit < best.fit) best = { ...evaluated[0] };
+        history.push(best.fit);
+      }
+
+      genHistory = history;
+      return best.res;
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  STEP GENERATION
+    // ══════════════════════════════════════════════════════════════
+    function generateSteps(boards, BW, BH, algo) {
+      const out = [];
+      const total = boards.reduce((a, b) => a + b.placements.length, 0);
+      let placed = 0;
+      boards.forEach((board, bi) => {
+        out.push({
+          type: 'open', boardIdx: bi,
+          msg: `📋 开启第 ${bi + 1} 块木板  [${BW}×${BH}mm]  算法: ${algoLabel(algo)}\n${bi > 0 ? `前一块空间不足，自动添加第 ${bi + 1} 块` : '开始排列第一块木板'}`,
+          snap: mkSnap(boards, bi, 0), hl: null
+        });
+        board.placements.forEach((p, pi) => {
+          placed++;
+          const used = board.placements.slice(0, pi + 1).reduce((a, x) => a + x.w * x.h, 0);
+          out.push({
+            type: 'place', boardIdx: bi,
+            msg: `✂️  放置: ${p.name}\n   位置: (${Math.round(p.x)}, ${Math.round(p.y)}) mm\n   尺寸: ${p.w}×${p.h}mm${p.rotated ? ' [旋转90°]' : ''}\n   木板利用率: ${(used / (BW * BH) * 100).toFixed(1)}%   总进度: ${placed}/${total}`,
+            snap: mkSnap(boards, bi, pi + 1), hl: { boardIdx: bi, x: p.x, y: p.y, w: p.w, h: p.h }
+          });
+        });
+        const used = board.placements.reduce((a, p) => a + p.w * p.h, 0);
+        out.push({
+          type: 'done', boardIdx: bi,
+          msg: `✅ 第 ${bi + 1} 块完成  利用率: ${(used / (BW * BH) * 100).toFixed(1)}%  废料: ${((BW * BH - used) / 1e6).toFixed(4)}m²\n${bi < boards.length - 1 ? `→ 仍有图形未完，自动开启第 ${bi + 2} 块` : `→ 🎉 全部 ${total} 个图形切割完成！`}`,
+          snap: mkSnap(boards, bi, board.placements.length), hl: null
+        });
+      });
+      return out;
+    }
+    /**
+     * 生成当前状态快照：对于每块木板，返回已放置图形数量（如果是当前正在放置的木板，则返回正在放置的图形数量；如果还未开始放置的木板，则返回0）
+     */
+    function mkSnap(boards, upToBi, upToPi) {
+      return boards.map((b, bi) => bi < upToBi ? b.placements.length : bi === upToBi ? upToPi : 0);
+    }
+
+    const algoLabel = a => ({
+      maxrects: 'MaxRects', guillotine: 'Guillotine', bottomleft: 'Bottom-Left',
+      nfp_greedy: 'NFP贪心', svgnest: 'SVGNest', sa: '模拟退火SA', ga: '遗传算法GA'
+    }[a] || a);
+
+    // ══════════════════════════════════════════════════════════════
+    //  RUN
+    // ══════════════════════════════════════════════════════════════
+    function run() {
+      const BW = parseFloat(document.getElementById('boardW').value);
+      const BH = parseFloat(document.getElementById('boardH').value);
+      const kerf = parseFloat(document.getElementById('kerf').value) || 0;
+      const ar = document.getElementById('allowRotate').value === '1';
+      const algo = selAlgoId;
+      if (!BW || !BH || BW < 1 || BH < 1) { alert('请输入有效木板尺寸'); return; }
+      const valid = shapes.filter(s => s.w > 0 && s.h > 0);
+      if (!valid.length) { alert('请至少添加一个有效图形'); return; }
+      const tagged = valid.map((s, i) => ({ ...s, colorIdx: i }));
+
+      setComp(true, '正在初始化...', 0);
+      document.getElementById('runBtn').disabled = true;
+      genHistory = [];
+
+      // 延迟实际计算，确保界面更新显示进度条（某些浏览器可能需要这个技巧来强制刷新UI）
+      setTimeout(() => {
+        const t0 = performance.now();
+        let result;
+        try {
+          if (algo === 'maxrects') {
+            setComp(true, 'MaxRects 计算中...', 50);
+            result = packSorted(MaxRectsBin, tagged, BW, BH, kerf, ar);
+          } else if (algo === 'guillotine') {
+            setComp(true, 'Guillotine 计算中...', 50);
+            result = packSorted(GuillotineBin, tagged, BW, BH, kerf, ar);
+          } else if (algo === 'bottomleft') {
+            setComp(true, 'Bottom-Left 计算中...', 50);
+            result = packSorted(BottomLeftBin, tagged, BW, BH, kerf, ar);
+          } else if (algo === 'nfp_greedy') {
+            setComp(true, 'NFP 临界多边形计算中...', 50);
+            result = packSorted(NFPBin, tagged, BW, BH, kerf, ar);
+          } else if (algo === 'sa') {
+            const T0 = parseFloat(document.getElementById('p1').value) || 1000;
+            const maxSteps = parseInt(document.getElementById('p2').value) || 500;
+            result = packSA(tagged, BW, BH, kerf, ar, T0, maxSteps, (pct, fit, hist) => {
+              setComp(true, `SA 退火中... 当前最优: ${fit.toFixed(4)}`, pct * 100);
+            });
+          } else if (algo === 'ga') {
+            const popSize = parseInt(document.getElementById('p1').value) || 30;
+            const generations = parseInt(document.getElementById('p2').value) || 100;
+            result = packGA(tagged, BW, BH, kerf, ar, popSize, generations, (pct, fit, hist) => {
+              setComp(true, `GA 进化中... 最优适应度: ${fit.toFixed(4)}`, pct * 100);
+            });
+          } else if (algo === 'svgnest') {
+            const popSize = parseInt(document.getElementById('p1').value) || 20;
+            const generations = parseInt(document.getElementById('p2').value) || 60;
+            result = packSVGNest(tagged, BW, BH, kerf, ar, popSize, generations, (pct, fit, hist) => {
+              setComp(true, `SVGNest 进化中... 最优: ${fit.toFixed(4)}`, pct * 100);
+            });
+          }
+        } catch (err) {
+          console.error(err);
+          alert('计算出错：' + err.message);
+          setComp(false); document.getElementById('runBtn').disabled = false; return;
+        }
+        const elapsed = Math.round(performance.now() - t0);
+
+        if (result.unfittable?.length > 0) {
+          alert(`以下图形超出木板尺寸：\n${result.unfittable.map(u => `  • ${u.name} (${u.w}×${u.h}mm)`).join('\n')}`);
+        }
+        const { boards } = result;
+        if (!boards?.length) { setComp(false); document.getElementById('runBtn').disabled = false; return; }
+
+        const totalArea = tagged.reduce((a, s) => a + s.w * s.h, 0);
+        const totalBoardArea = boards.length * BW * BH;
+        document.getElementById('hs-boards').textContent = boards.length;
+        document.getElementById('hs-util').textContent = (totalArea / totalBoardArea * 100).toFixed(1) + '%';
+        document.getElementById('hs-waste').textContent = ((totalBoardArea - totalArea) / 1e6).toFixed(4) + 'm²';
+        document.getElementById('hs-shapes').textContent = valid.length;
+        document.getElementById('hs-time').textContent = elapsed + 'ms';
+
+        solution = { boards, BW, BH, kerf, algo };
+        steps = generateSteps(boards, BW, BH, algo);
+        curStep = steps.length - 1;
+
+        setComp(false);
+        document.getElementById('runBtn').disabled = false;
+        document.getElementById('ctrlBar').classList.remove('hidden');
+        document.getElementById('emptyS').style.display = 'none';
+        renderCurStep();
+      }, 30);
+    }
+
+    /**
+     * 控制计算进度显示：当on为true时显示进度条和文本，pct控制进度条填充百分比；当on为false时隐藏进度条。
+     */
+    function setComp(on, txt = '', pct = 0) {
+      const bar = document.getElementById('compBar');
+      if (on) { bar.classList.add('vis'); document.getElementById('compTxt').textContent = txt; document.getElementById('compFill').style.width = pct + '%'; document.getElementById('compPct').textContent = Math.round(pct) + '%'; }
+      else bar.classList.remove('vis');
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  NAVIGATION
+    // ══════════════════════════════════════════════════════════════
+    function goNext() { 
+      if (curStep < steps.length - 1) { 
+        curStep++; 
+        renderCurStep(); 
+      } 
+    }
+    function goPrev() { 
+      if (curStep > 0) { 
+        curStep--; 
+        renderCurStep(); 
+      } 
+    }
+    function goFirst() { 
+      curStep = 0; 
+      renderCurStep(); 
+    }
+    function goLast() { 
+      curStep = steps.length - 1; 
+      renderCurStep(); 
+    }
+
+    function renderCurStep() {
+      if (!steps.length) return;
+      const step = steps[curStep];
+      const pct = steps.length > 1 ? (curStep / (steps.length - 1) * 100).toFixed(1) : 100;
+      document.getElementById('pFill').style.width = pct + '%';
+      document.getElementById('sCtr').textContent = `步骤 ${curStep + 1}/${steps.length}`;
+      document.getElementById('btnP').disabled = curStep === 0;
+      document.getElementById('btnN').disabled = curStep === steps.length - 1;
+      renderBoards(step);
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  RENDER
+    // ══════════════════════════════════════════════════════════════
+    function renderBoards(step) {
+      const sc = document.getElementById('boardsSc');
+      sc.querySelectorAll('.bc,.step-log,.gen-chart-wrap').forEach(el => el.remove());
+
+      // Log
+      const log = document.createElement('div');
+      log.className = 'step-log'; log.textContent = step.msg;
+      sc.appendChild(log);
+
+      // Convergence chart (if GA/SA/SVGNest)
+      if (genHistory.length > 2 && step === steps[steps.length - 1]) {
+        const cw = document.createElement('div');
+        cw.className = 'gen-chart-wrap';
+        const ct = document.createElement('div');
+        ct.className = 'gen-chart-title';
+        ct.textContent = '收敛曲线 — 适应度 vs 代/步数（越低越好）';
+        cw.appendChild(ct);
+        const cvs = document.createElement('canvas');
+        cvs.className = 'gen-chart';
+        const cw2 = sc.clientWidth - 80;
+        cvs.width = Math.max(cw2, 200); cvs.height = 80;
+        cw.appendChild(cvs);
+        sc.appendChild(cw);
+        drawChart(cvs, genHistory);
+      }
+
+      const { boards, BW, BH } = solution;
+      const snapArr = step.snap;
+      boards.forEach((board, bi) => {
+        const count = snapArr[bi];
+        if (count === 0 && bi > step.boardIdx) return;
+        const used = board.placements.slice(0, count).reduce((a, p) => a + p.w * p.h, 0);
+        const util = (used / (BW * BH) * 100).toFixed(1);
+        const isActive = bi === step.boardIdx;
+
+        const card = document.createElement('div');
+        card.className = 'bc' + (isActive ? ' active-bc' : '');
+        const hdr = document.createElement('div');
+        hdr.className = 'bch';
+        hdr.innerHTML = `<div class="bct">木板 #${bi + 1}</div>
+      <div class="ub"><div class="uf" style="width:${count === board.placements.length ? util : 0}%"></div></div>
+      <div class="bcm">
+        <span>${count}/${board.placements.length}件</span>
+        <span>${count === board.placements.length ? util + '%' : '—'}</span>
+        <span>${BW}×${BH}mm</span>
+      </div>`;
+        card.appendChild(hdr);
+
+        const body = document.createElement('div');
+        body.className = 'board-body';
+        const wrap = document.createElement('div');
+        wrap.className = 'cwrap';
+        const canvas = document.createElement('canvas');
+        const aW = sc.clientWidth - 56;
+        const scale = Math.min(aW / BW, 340 / BH, 0.3);
+        canvas.width = Math.max(Math.round(BW * scale), 1);
+        canvas.height = Math.max(Math.round(BH * scale), 1);
+        wrap.appendChild(canvas); body.appendChild(wrap);
+
+        const legend = document.createElement('div');
+        legend.className = 'legend';
+        board.placements.slice(0, count).forEach(p => {
+          const li = document.createElement('div'); li.className = 'li';
+          li.innerHTML = `<div class="ld" style="background:${gc(p.colorIdx)}"></div>${esc(p.name)}`;
+          legend.appendChild(li);
+        });
+        body.appendChild(legend); card.appendChild(body); sc.appendChild(card);
+
+        const hl = (step.hl && step.hl.boardIdx === bi) ? step.hl : null;
+        drawBoard(canvas, board, count, BW, BH, scale, hl);
+
+        canvas.addEventListener('mousemove', ev => {
+          const r = canvas.getBoundingClientRect();
+          const mx = (ev.clientX - r.left) / scale, my = (ev.clientY - r.top) / scale;
+          const tip = document.getElementById('tooltip');
+          let found = false;
+          board.placements.slice(0, count).forEach(p => {
+            if (mx >= p.x && mx <= p.x + p.w && my >= p.y && my <= p.y + p.h) {
+              tip.style.display = 'block';
+              tip.style.left = (ev.clientX + 12) + 'px'; tip.style.top = (ev.clientY + 12) + 'px';
+              tip.textContent = `名称: ${p.name}\n尺寸: ${p.w}×${p.h}mm${p.rotated ? ' [旋转]' : ''}\n位置: (${Math.round(p.x)}, ${Math.round(p.y)})\n面积: ${(p.w * p.h / 1e6).toFixed(4)}m²`;
+              found = true;
+            }
+          });
+          if (!found) tip.style.display = 'none';
+        });
+        canvas.addEventListener('mouseleave', () => { document.getElementById('tooltip').style.display = 'none'; });
+      });
+    }
+
+
+
+    //=======
+    /**
+     * 获取屏幕信息和设备像素比
+     * @returns {Object} 包含屏幕尺寸和DPR信息的对象
+     */
+    function getScreenInfo() {
+      const dpr = window.devicePixelRatio || 1;
+
+      return {
+        // 设备像素比
+        dpr: dpr,
+
+        // 屏幕物理像素尺寸
+        screenWidth: window.screen.width,
+        screenHeight: window.screen.height,
+
+        // 屏幕逻辑像素尺寸 (CSS像素)
+        screenLogicalWidth: window.screen.width / dpr,
+        screenLogicalHeight: window.screen.height / dpr,
+
+        // 视口尺寸 (当前窗口可见区域)
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+
+        // 视口物理像素尺寸
+        viewportPhysicalWidth: window.innerWidth * dpr,
+        viewportPhysicalHeight: window.innerHeight * dpr,
+
+        // 文档整体尺寸
+        documentWidth: document.documentElement.clientWidth,
+        documentHeight: document.documentElement.clientHeight,
+
+        // 是否高DPI屏幕
+        isHighDPI: dpr >= 2,
+
+        // 推荐canvas缩放因子
+        scaleFactor: dpr
+      };
+    }
+
+    /**
+     * 根据设备像素比调整canvas大小
+     * @param {HTMLCanvasElement} canvas - canvas元素
+     * @param {number} logicalWidth - 期望的逻辑宽度 (CSS像素)
+     * @param {number} logicalHeight - 期望的逻辑高度 (CSS像素)
+     * @param {boolean} keepAspectRatio - 是否保持宽高比
+     * @returns {Object} 调整后的canvas信息
+     */
+    function setupCanvasForDPI(canvas, logicalWidth, logicalHeight, keepAspectRatio = true) {
+      if (!canvas) {
+        throw new Error('Canvas元素不能为空');
+      }
+
+      // 获取屏幕信息
+      const screenInfo = getScreenInfo();
+      const dpr = screenInfo.dpr;
+
+      // 如果不指定逻辑尺寸，使用当前CSS尺寸
+      if (!logicalWidth) {
+        logicalWidth = canvas.clientWidth;
+      }
+      if (!logicalHeight) {
+        logicalHeight = canvas.clientHeight;
+      }
+
+      // 如果保持宽高比，根据宽度计算高度
+      if (keepAspectRatio && canvas.width && canvas.height) {
+        const aspectRatio = canvas.width / canvas.height;
+        logicalHeight = logicalWidth / aspectRatio;
+      }
+
+      // 设置canvas的物理像素尺寸 (实际像素)
+      canvas.width = logicalWidth * dpr;
+      canvas.height = logicalHeight * dpr;
+
+      // 设置canvas的CSS尺寸 (逻辑像素)
+      canvas.style.width = logicalWidth + 'px';
+      canvas.style.height = logicalHeight + 'px';
+
+      // 获取2d上下文并设置缩放
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.scale(dpr, dpr);
+
+        // 开启抗锯齿以提高文字清晰度
+        ctx.imageSmoothingEnabled = true;
+        ctx.textRendering = 'geometricPrecision';
+      }
+
+      return {
+        canvas: canvas,
+        context: ctx,
+        logicalWidth: logicalWidth,
+        logicalHeight: logicalHeight,
+        physicalWidth: canvas.width,
+        physicalHeight: canvas.height,
+        dpr: dpr,
+        scaleFactor: dpr,
+        screenInfo: screenInfo
+      };
+    }
+
+    /**
+     * 创建适配DPI的canvas
+     * @param {HTMLElement} container - 容器元素
+     * @param {number} width - 逻辑宽度
+     * @param {number} height - 逻辑高度
+     * @param {string} id - canvas ID
+     * @returns {Object} canvas信息
+     */
+    function createAdaptiveCanvas(container, width, height, id = 'adaptive-canvas') {
+      // 移除可能已存在的canvas
+      const existingCanvas = document.getElementById(id);
+      if (existingCanvas) {
+        existingCanvas.remove();
+      }
+
+      // 创建新的canvas
+      const canvas = document.createElement('canvas');
+      canvas.id = id;
+
+      // 添加到容器
+      if (container) {
+        container.appendChild(canvas);
+      } else {
+        document.body.appendChild(canvas);
+      }
+
+      // 设置canvas以适应DPI
+      return setupCanvasForDPI(canvas, width, height);
+    }
+
+    /**
+     * 监听窗口大小变化，自动调整canvas
+     * @param {HTMLCanvasElement} canvas - canvas元素
+     * @param {Function} onResize - 调整大小后的回调函数
+     * @param {number} debounceDelay - 防抖延迟(ms)
+     * @returns {Function} 清理函数
+     */
+    function makeCanvasResponsive(canvas, onResize = null, debounceDelay = 250) {
+      if (!canvas) return () => { };
+
+      // 保存原始宽高比
+      const aspectRatio = canvas.width / canvas.height;
+
+      // 防抖处理
+      let resizeTimeout;
+      const handleResize = () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          // 获取容器大小
+          const container = canvas.parentElement;
+          if (container) {
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+
+            // 重新设置canvas
+            const canvasInfo = setupCanvasForDPI(
+              canvas,
+              containerWidth,
+              containerWidth / aspectRatio
+            );
+
+            // 调用回调
+            if (onResize && typeof onResize === 'function') {
+              onResize(canvasInfo);
+            }
+          }
+        }, debounceDelay);
+      };
+
+      // 添加事件监听
+      window.addEventListener('resize', handleResize);
+
+      // 立即执行一次
+      handleResize();
+
+      // 返回清理函数
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        clearTimeout(resizeTimeout);
+      };
+    }
+
+    /**
+     * 获取当前canvas的实际渲染尺寸
+     * @param {HTMLCanvasElement} canvas 
+     * @returns {Object} 尺寸信息
+     */
+    function getCanvasRenderSize(canvas) {
+      return {
+        // 物理像素尺寸 (实际像素点)
+        physicalWidth: canvas.width,
+        physicalHeight: canvas.height,
+
+        // 逻辑像素尺寸 (CSS像素)
+        logicalWidth: canvas.clientWidth,
+        logicalHeight: canvas.clientHeight,
+
+        // 设备像素比
+        dpr: window.devicePixelRatio || 1,
+
+        // 缩放比例
+        scaleX: canvas.width / canvas.clientWidth,
+        scaleY: canvas.height / canvas.clientHeight
+      };
+    }
+
+    /**
+     * 绘制木板和已放置的图形
+     * @param {HTMLCanvasElement} canvas - 目标canvas元素
+     * @param {Object} board - 包含placements数组的木板对象
+     * @param {number} count - 当前已放置的图形数量
+     * @param {number} BW - 木板宽度
+     * @param {number} BH - 木板高度
+     * @param {number} scale - 绘图缩放比例
+     * @param {Object|null} hl - 当前高亮的图形信息 {boardIdx, x, y, w, h}，如果没有则为null
+     */
+    function drawBoard(canvas, board, count, BW, BH, scale, hl) {
+      // 先设置canvas适应DPI
+      const canvasInfo = setupCanvasForDPI(canvas, canvas.clientWidth, canvas.clientHeight);
+      const ctx = canvasInfo.context;
+
+      // 使用逻辑坐标绘图
+      const W = canvasInfo.logicalWidth;
+      const H = canvasInfo.logicalHeight;
+
+      // 木纹背景
+      ctx.fillStyle = '#1a0f04';
+      ctx.fillRect(0, 0, W, H);
+
+      // 木纹线条
+      for (let y = 0; y < H; y += 5) {
+        ctx.strokeStyle = `rgba(130,70,15,${0.04 + 0.03 * Math.sin(y * 0.1)})`;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(0, y + Math.sin(y * 0.13) * 0.8);
+        ctx.lineTo(W, y + Math.sin(y * 0.13 + 2) * 0.8);
+        ctx.stroke();
+      }
+
+      // 斜线纹理
+      ctx.strokeStyle = 'rgba(255,255,255,0.015)';
+      ctx.lineWidth = 0.4;
+      for (let d = -H; d < W + H; d += 16) {
+        ctx.beginPath();
+        ctx.moveTo(d, 0);
+        ctx.lineTo(d + H, H);
+        ctx.stroke();
+      }
+
+      // 网格线
+      ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+      ctx.lineWidth = 0.3;
+      for (let gx = 0; gx < W; gx += scale * 100) {
+        ctx.beginPath();
+        ctx.moveTo(gx, 0);
+        ctx.lineTo(gx, H);
+        ctx.stroke();
+      }
+      for (let gy = 0; gy < H; gy += scale * 100) {
+        ctx.beginPath();
+        ctx.moveTo(0, gy);
+        ctx.lineTo(W, gy);
+        ctx.stroke();
+      }
+
+      // 绘制板材上的零件
+      board.placements.slice(0, count).forEach(p => {
+        const px = p.x * scale;
+        const py = p.y * scale;
+        const pw = p.w * scale;
+        const ph = p.h * scale;
+
+        const color = gc(p.colorIdx);
+        const isHL = hl && Math.round(p.x) === Math.round(hl.x) && Math.round(p.y) === Math.round(hl.y);
+
+        // 阴影和填充
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.7)';
+        ctx.shadowBlur = 5;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+        ctx.fillStyle = color + 'e0';
+        ctx.fillRect(px, py, pw, ph);
+        ctx.restore();
+
+        // 内纹理
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(px, py, pw, ph);
+        ctx.clip();
+        for (let gy = py; gy < py + ph; gy += 7) {
+          ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+          ctx.lineWidth = 0.4;
+          ctx.beginPath();
+          ctx.moveTo(px, gy);
+          ctx.lineTo(px + pw, gy);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // 边框
+        ctx.strokeStyle = isHL ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.22)';
+        ctx.lineWidth = isHL ? 1.5 : 0.6;
+        ctx.strokeRect(px + 0.5, py + 0.5, pw - 1, ph - 1);
+
+        // 文字标签
+        if (pw > 12 && ph > 8) {
+          ctx.save();
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+
+          const cx = px + pw / 2;
+          const cy = py + ph / 2;
+          const fs = Math.min(10, pw / 5, ph / 2.2, 9);
+
+          if (fs >= 4) {
+            // 零件名称
+            ctx.font = `bold ${fs}px "JetBrains Mono", monospace`;
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            ctx.fillText(p.name, cx + 0.5, cy + 0.5);
+            ctx.fillStyle = 'rgba(255,255,255,0.92)';
+            ctx.fillText(p.name, cx, cy);
+
+            // 尺寸标签
+            if (ph > fs * 2.8 && fs >= 5.5) {
+              ctx.font = `${Math.max(fs - 2, 4)}px "JetBrains Mono", monospace`;
+              ctx.fillStyle = 'rgba(255,255,255,0.35)';
+              ctx.fillText(`${p.w}×${p.h}`, cx, cy + fs + 2);
+            }
+          }
+
+          // 旋转标记
+          if (p.rotated && pw > 10 && ph > 7) {
+            ctx.font = '7px sans-serif';
+            ctx.fillStyle = 'rgba(255,220,60,.85)';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.fillText('↻', px + 2, py + 1);
+          }
+
+          ctx.restore();
+        }
+      });
+
+      // 高亮选中的零件
+      if (hl) {
+        const hx = hl.x * scale;
+        const hy = hl.y * scale;
+        const hw = hl.w * scale;
+        const hh = hl.h * scale;
+
+        ctx.save();
+        ctx.strokeStyle = '#d4a853';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 3]);
+        ctx.shadowColor = '#d4a853';
+        ctx.shadowBlur = 16;
+        ctx.strokeRect(hx + 1, hy + 1, hw - 2, hh - 2);
+        ctx.setLineDash([]);
+        ctx.restore();
+      }
+
+      // 外边框
+      ctx.strokeStyle = '#484848';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(0.75, 0.75, W - 1.5, H - 1.5);
+    }
+
+
+    /**
+     * 绘制适应度收敛曲线
+     * @param canvas - 目标canvas元素
+     * @param history - 适应度历史数组
+    */
+    function drawChart(canvas, history) {
+      // 先设置canvas适应DPI
+      const canvasInfo = setupCanvasForDPI(canvas, canvas.clientWidth, canvas.clientHeight);
+      const ctx = canvasInfo.context;
+
+      // 使用逻辑坐标绘图
+      const W = canvasInfo.logicalWidth;
+      const H = canvasInfo.logicalHeight;
+
+      ctx.fillStyle = '#1c1c1c';
+      ctx.fillRect(0, 0, W, H);
+
+      if (history.length < 2) return;
+
+      const min = Math.min(...history);
+      const max = Math.max(...history);
+      const range = max - min || 1;
+      const pad = 10;
+
+      const toX = i => (i / (history.length - 1)) * (W - 2 * pad) + pad;
+      const toY = v => H - pad - (v - min) / range * (H - 2 * pad);
+
+      // 绘制网格
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i < 4; i++) {
+        const y = pad + i * (H - 2 * pad) / 3;
+        ctx.beginPath();
+        ctx.moveTo(pad, y);
+        ctx.lineTo(W - pad, y);
+        ctx.stroke();
+      }
+
+      // 填充区域
+      ctx.beginPath();
+      ctx.moveTo(toX(0), toY(history[0]));
+      history.forEach((v, i) => ctx.lineTo(toX(i), toY(v)));
+      ctx.lineTo(toX(history.length - 1), H - pad);
+      ctx.lineTo(toX(0), H - pad);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(212,168,83,0.12)';
+      ctx.fill();
+
+      // 绘制曲线
+      ctx.beginPath();
+      ctx.moveTo(toX(0), toY(history[0]));
+      history.forEach((v, i) => ctx.lineTo(toX(i), toY(v)));
+      ctx.strokeStyle = '#d4a853';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // 标签文字 (使用稍大字体确保清晰)
+      ctx.font = '11px "JetBrains Mono", "Courier New", monospace';
+      ctx.fillStyle = 'rgba(122,106,88,.8)';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText(`最高:${max.toFixed(3)}`, pad + 2, pad + 5);
+      ctx.fillText(`最低:${min.toFixed(3)}`, pad + 2, H - pad - 15);
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  MISC
+    // ══════════════════════════════════════════════════════════════
+    function resetAll() {
+      solution = null; steps = []; curStep = 0; genHistory = [];
+      document.getElementById('ctrlBar').classList.add('hidden');
+      document.getElementById('boardsSc').querySelectorAll('.bc,.step-log,.gen-chart-wrap').forEach(el => el.remove());
+      document.getElementById('emptyS').style.display = '';
+      ['hs-boards', 'hs-util', 'hs-shapes', 'hs-waste', 'hs-time'].forEach(id => { document.getElementById(id).textContent = '—'; });
+    }
+    function loadExample() {
+      shapes = []; shapeIdCnt = 1;
+      [['门板A', 800, 2000], ['门板B', 800, 2000], ['侧板L', 600, 2200], ['侧板R', 600, 2200],
+      ['顶板', 1000, 600], ['底板', 1000, 600], ['抽屉面A', 400, 280], ['抽屉面B', 400, 280],
+      ['搁板1', 900, 250], ['搁板2', 900, 250], ['搁板3', 500, 250], ['背板', 980, 2180]
+      ].forEach(([n, w, h]) => addShape(n, w, h, false));
+      document.getElementById('boardW').value = 2440;
+      document.getElementById('boardH').value = 1220;
+      renderShapes();
+    }
+
+    loadExample();
+  </script>
+</body>
+
+</html>
