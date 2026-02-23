@@ -165,7 +165,7 @@
 //     Done,
 // }
 
-// struct WoodOptimizerApp {
+// struct WoodCutterApp {
 //     // Board config
 //     board_w: String,
 //     board_h: String,
@@ -211,7 +211,7 @@
 //     error_msg: Option<String>,
 // }
 
-// impl Default for WoodOptimizerApp {
+// impl Default for WoodCutterApp {
 //     fn default() -> Self {
 //         let mut app = Self {
 //             board_w: "2440".into(),
@@ -248,7 +248,7 @@
 //     }
 // }
 
-// impl WoodOptimizerApp {
+// impl WoodCutterApp {
 //     fn add_shape(&mut self, name: &str, w: &str, h: &str) {
 //         let id = self.shape_id_cnt;
 //         self.shape_id_cnt += 1;
@@ -617,7 +617,7 @@
 // // ─────────────────────────────────────────────
 // //  eframe App impl
 // // ─────────────────────────────────────────────
-// impl eframe::App for WoodOptimizerApp {
+// impl eframe::App for WoodCutterApp {
 //     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
 //         // Apply dark style
 //         let mut style = (*ctx.style()).clone();
@@ -1305,7 +1305,7 @@
 //         Box::new(|cc| {
 //             // Load CJK-capable font
 //             setup_fonts(&cc.egui_ctx);
-//             Ok(Box::new(WoodOptimizerApp::default()))
+//             Ok(Box::new(WoodCutterApp::default()))
 //         }),
 //     )
 // }
@@ -1364,7 +1364,7 @@ mod types;
 mod ui;
 mod utils;
 
-use app::WoodOptimizerApp;
+use app::WoodCutterApp;
 use utils::load_icon;
 
 fn main() -> eframe::Result<()> {
@@ -1382,7 +1382,7 @@ fn main() -> eframe::Result<()> {
         native_options,
         Box::new(|cc| {
             setup_fonts(&cc.egui_ctx);
-            Ok(Box::new(WoodOptimizerApp::default()))
+            Ok(Box::new(WoodCutterApp::default()))
         }),
     )
 }

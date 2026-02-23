@@ -5,7 +5,7 @@ edition = "2024"
 description = "木板分割 - NFP · GA · SA · SVGNest · MaxRects"
 
 [[bin]]
-name = "wood_optimizer"
+name = "wood_cutter"
 path = "src/main.rs"
 
 [dependencies]

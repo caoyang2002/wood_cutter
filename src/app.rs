@@ -10,7 +10,7 @@ use crate::ui::{
 };
 use crate::utils::parse_positive_f64;
 
-pub struct WoodOptimizerApp {
+pub struct WoodCutterApp {
     // Board config
     pub board_w: String,
     pub board_h: String,
@@ -56,7 +56,7 @@ pub struct WoodOptimizerApp {
     pub error_msg: Option<String>,
 }
 
-impl Default for WoodOptimizerApp {
+impl Default for WoodCutterApp {
     fn default() -> Self {
         let mut app = Self {
             board_w: "2440".into(),
@@ -93,7 +93,7 @@ impl Default for WoodOptimizerApp {
     }
 }
 
-impl WoodOptimizerApp {
+impl WoodCutterApp {
     pub fn add_shape(&mut self, name: &str, w: &str, h: &str) {
         let id = self.shape_id_cnt;
         self.shape_id_cnt += 1;
@@ -242,7 +242,7 @@ impl WoodOptimizerApp {
     }
 }
 
-impl eframe::App for WoodOptimizerApp {
+impl eframe::App for WoodCutterApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Apply dark style
         let mut style = (*ctx.style()).clone();
@@ -262,44 +262,14 @@ impl eframe::App for WoodOptimizerApp {
         ctx.set_style(style);
 
         // ── Top Header ──
-        egui::TopBottomPanel::top("header")
-            .exact_height(44.0)
-            .frame(egui::Frame {
-                fill: SF,
-                inner_margin: egui::Margin::symmetric(22.0, 0.0),
-                stroke: Stroke::new(1.0, BD),
-                ..Default::default()
-            })
-            .show(ctx, |ui| {
-                ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-                    ui.label(RichText::new("木板分割优化").size(17.0).color(ACC).strong());
-                    ui.add_space(8.0);
-                    ui.label(
-                        RichText::new("NFP · GA · SA · SVGNest · MaxRects")
-                            .size(9.0)
-                            .color(TX2),
-                    );
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        let stats = [
-                            ("耗时ms", &self.stat_time),
-                            ("废料m²", &self.stat_waste),
-                            ("图形数", &self.stat_shapes),
-                            ("利用率", &self.stat_util),
-                            ("木板数", &self.stat_boards),
-                        ];
-                        for (label, val) in &stats {
-                            ui.add_space(8.0);
-                            ui.vertical(|ui| {
-                                ui.add_space(6.0);
-                                ui.label(RichText::new(*val).size(15.0).color(ACC).strong().monospace());
-                                ui.label(RichText::new(*label).size(7.0).color(TX2).monospace());
-                            });
-                            ui.add_space(4.0);
-                            ui.separator();
-                        }
-                    });
-                });
-            });
+        crate::ui::draw_header(
+            ctx,
+            &self.stat_boards,
+            &self.stat_util,
+            &self.stat_shapes,
+            &self.stat_waste,
+            &self.stat_time,
+        );
 
         // ── Left Sidebar ──
         egui::SidePanel::left("sidebar")

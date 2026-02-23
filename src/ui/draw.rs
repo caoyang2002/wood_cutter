@@ -2,6 +2,7 @@ use eframe::egui::{self, Color32, FontId, Painter, Pos2, Rect, Rounding, Stroke,
 use crate::core::Board;
 use crate::ui::theme::gc;
 
+// 绘制木板
 pub fn draw_board_canvas(
     painter: &Painter,
     rect: Rect,
@@ -148,6 +149,7 @@ pub fn draw_board_canvas(
         Stroke::new(1.5, Color32::from_rgb(72, 72, 72)),
     );
 }
+
 
 pub fn draw_convergence_chart(painter: &Painter, rect: Rect, history: &[f64]) {
     if history.len() < 2 {

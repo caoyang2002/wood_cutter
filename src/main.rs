@@ -6,7 +6,7 @@ mod types;
 mod ui;
 mod utils;
 
-use app::WoodOptimizerApp;
+use app::WoodCutterApp;
 use utils::load_icon;
 
 fn main() -> eframe::Result<()> {
@@ -24,7 +24,7 @@ fn main() -> eframe::Result<()> {
         native_options,
         Box::new(|cc| {
             setup_fonts(&cc.egui_ctx);
-            Ok(Box::new(WoodOptimizerApp::default()))
+            Ok(Box::new(WoodCutterApp::default()))
         }),
     )
 }
