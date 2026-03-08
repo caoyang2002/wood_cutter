@@ -1,0 +1,60 @@
+name: Release
+
+# 当你推送一个以 v 开头的 tag 时触发，例如 v1.0.0
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    # 使用矩阵策略，为每个平台启动一个独立的构建任务
+    strategy:
+      matrix:
+        include:
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            # Windows 上的可执行文件后缀
+            bin_ext: .exe
+          - platform: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            bin_ext: ""
+          - platform: macos-latest
+            target: x86_64-apple-darwin
+            bin_ext: ""
+
+    # 运行在对应平台的虚拟机上
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 设置 Rust 环境
+      - uses: dtolnay/rust-toolchain@stable
+
+      # 1. 构建阶段
+      - name: Build
+        run: |
+          # 启用 unstable features 以使用 build-std，这在某些环境下能更好地处理依赖
+          cargo build --release --target ${{ matrix.target }} -Z unstable-options --no-default-features
+
+      # 2. 打包阶段
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          # 根据不同平台，上传对应的可执行文件
+          path: target/${{ matrix.target }}/release/wood_cutter${{ matrix.bin_ext }}
+
+      # 3. 发布阶段：将所有平台的构建产物汇总并发布到 GitHub Release
+      - name: Create Release
+        # 只在所有平台构建完成后，由一个单独的任务执行发布
+        if: ${{ matrix.platform == 'windows-latest' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          # 从其他任务中下载构建好的文件
+          files: |
+            target/${{ matrix.target }}/release/wood_cutter${{ matrix.bin_ext}}
+            # 这里可以添加其他文件，如 CHANGELOG.md
+        env:
+          # 需要 GitHub Token 权限来创建 Release
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
