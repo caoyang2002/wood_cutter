@@ -3,8 +3,8 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'  # 当推送v开头的标签时触发，例如 v1.0.0
-  workflow_dispatch:  # 允许手动触发
+      - 'v*'
+  workflow_dispatch:
     inputs:
       version:
         description: '版本号 (例如: v1.0.0)'
@@ -24,7 +24,11 @@ jobs:
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
       release_id: ${{ steps.create_release.outputs.id }}
+      version: ${{ steps.get_version.outputs.version }}
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
     - name: Get version
       id: get_version
       run: |
@@ -67,14 +71,11 @@ jobs:
           1. 下载对应系统的文件
           2. 赋予执行权限 (仅限 Linux/macOS): `chmod +x wood_cutter-*`
           3. 双击运行或在终端中运行
-          
-          ## 更新日志
-          - 请查看提交历史了解详细更新
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build:
-    name: Build - ${{ matrix.os }}
+    name: Build - ${{ matrix.target }}
     needs: create-release
     runs-on: ${{ matrix.os }}
     strategy:
@@ -134,104 +135,66 @@ jobs:
     - name: Build release
       run: cargo build --release --target ${{ matrix.target }}
 
-    - name: Test executable (Unix)
+    - name: Create artifacts directory
+      run: mkdir -p artifacts
+
+    - name: Prepare binary (Unix)
       if: matrix.os != 'windows-latest'
       run: |
         chmod +x target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
-        # 可选：运行简单的版本检查
-        target/${{ matrix.target }}/release/${{ matrix.artifact_name }} --version || true
-
-    - name: Create package (Unix)
-      if: matrix.os != 'windows-latest'
-      shell: bash
-      run: |
-        cd target/${{ matrix.target }}/release
-        chmod +x ${{ matrix.artifact_name }}
-        
-        # 创建包含可执行文件和README的目录
-        PACKAGE_DIR="${{ matrix.asset_name }}-package"
-        mkdir -p $PACKAGE_DIR
-        
-        # 复制可执行文件
-        cp ${{ matrix.artifact_name }} $PACKAGE_DIR/
-        
-        # 创建README文件
-        cat > $PACKAGE_DIR/README.txt << EOF
-        ${{ env.APP_NAME }} - 版本: ${{ github.ref_name }}
-        构建日期: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-        目标平台: ${{ matrix.target }}
-        
-        运行说明:
-        - 在终端中运行: ./${{ matrix.artifact_name }}
-        - 或双击运行（如果系统支持）
-        
-        如果遇到权限问题，请运行:
-        chmod +x ${{ matrix.artifact_name }}
-        
-        需要帮助? 请访问: ${{ github.server_url }}/${{ github.repository }}
-        EOF
-        
-        # 打包为.tar.gz
-        tar czf ${{ matrix.asset_name }}.tar.gz $PACKAGE_DIR/
-        
-        # 计算SHA256
+        # 创建二进制文件的副本
+        cp target/${{ matrix.target }}/release/${{ matrix.artifact_name }} ./${{ matrix.asset_name }}
+        # 创建压缩包
+        tar -czf ${{ matrix.asset_name }}.tar.gz ${{ matrix.asset_name }}
+        # 生成校验和
+        sha256sum ${{ matrix.asset_name }} > ${{ matrix.asset_name }}.sha256
         sha256sum ${{ matrix.asset_name }}.tar.gz > ${{ matrix.asset_name }}.tar.gz.sha256
-        
-        # 移动到输出目录
-        mkdir -p ../../../artifacts
-        mv ${{ matrix.asset_name }}.tar.gz ../../../artifacts/
-        mv ${{ matrix.asset_name }}.tar.gz.sha256 ../../../artifacts/
+        # 移动到artifacts目录
+        mv ${{ matrix.asset_name }} artifacts/
+        mv ${{ matrix.asset_name }}.tar.gz artifacts/
+        mv ${{ matrix.asset_name }}.sha256 artifacts/
+        mv ${{ matrix.asset_name }}.tar.gz.sha256 artifacts/
 
-    - name: Create package (Windows)
+    - name: Prepare binary (Windows)
       if: matrix.os == 'windows-latest'
       shell: bash
       run: |
-        cd target/${{ matrix.target }}/release
-        
-        # 创建包含可执行文件和README的目录
-        PACKAGE_DIR="${{ matrix.asset_name }}-package"
-        mkdir -p $PACKAGE_DIR
-        
-        # 复制可执行文件
-        cp ${{ matrix.artifact_name }} $PACKAGE_DIR/
-        
-        # 创建README文件
-        cat > $PACKAGE_DIR/README.txt << EOF
-        ${{ env.APP_NAME }} - 版本: ${{ github.ref_name }}
-        构建日期: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-        目标平台: Windows
-        
-        运行说明:
-        - 双击运行 ${{ matrix.artifact_name }}
-        
-        需要帮助? 请访问: ${{ github.server_url }}/${{ github.repository }}
-        EOF
-        
-        # 打包为.zip
-        7z a -tzip ${{ matrix.asset_name }}.zip $PACKAGE_DIR/
-        
-        # 计算SHA256 (Windows)
+        # 创建二进制文件的副本
+        cp target/${{ matrix.target }}/release/${{ matrix.artifact_name }} ./${{ matrix.asset_name }}
+        # 创建压缩包
+        7z a -tzip ${{ matrix.asset_name }}.zip ${{ matrix.asset_name }}
+        # 生成校验和
         if command -v sha256sum &> /dev/null; then
+          sha256sum ${{ matrix.asset_name }} > ${{ matrix.asset_name }}.sha256
           sha256sum ${{ matrix.asset_name }}.zip > ${{ matrix.asset_name }}.zip.sha256
         else
-          # 使用PowerShell计算SHA256
+          powershell -Command "Get-FileHash ${{ matrix.asset_name }} -Algorithm SHA256 | ForEach-Object { $_.Hash.ToLower() + '  ' + $_.Path }" > ${{ matrix.asset_name }}.sha256
           powershell -Command "Get-FileHash ${{ matrix.asset_name }}.zip -Algorithm SHA256 | ForEach-Object { $_.Hash.ToLower() + '  ' + $_.Path }" > ${{ matrix.asset_name }}.zip.sha256
         fi
-        
-        # 移动到输出目录
-        mkdir -p ../../../artifacts
-        mv ${{ matrix.asset_name }}.zip ../../../artifacts/
-        mv ${{ matrix.asset_name }}.zip.sha256 ../../../artifacts/
+        # 移动到artifacts目录
+        mkdir -p artifacts
+        mv ${{ matrix.asset_name }} artifacts/
+        mv ${{ matrix.asset_name }}.zip artifacts/
+        mv ${{ matrix.asset_name }}.sha256 artifacts/
+        mv ${{ matrix.asset_name }}.zip.sha256 artifacts/
 
-    - name: Upload individual binary to release
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.asset_name }}-artifacts
+        path: artifacts/
+        retention-days: 1
+
+    - name: Upload to release
       if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ needs.create-release.outputs.release_id }}
+        tag_name: ${{ needs.create-release.outputs.version }}
         files: |
-          target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+          artifacts/${{ matrix.asset_name }}
           artifacts/${{ matrix.asset_name }}.tar.gz
           artifacts/${{ matrix.asset_name }}.zip
+          artifacts/${{ matrix.asset_name }}.sha256
           artifacts/${{ matrix.asset_name }}.tar.gz.sha256
           artifacts/${{ matrix.asset_name }}.zip.sha256
       env:
@@ -249,7 +212,7 @@ jobs:
         path: artifacts
         merge-multiple: true
         
-    - name: Generate checksums
+    - name: Generate combined checksums
       run: |
         cd artifacts
         # 生成所有文件的校验和
@@ -259,7 +222,7 @@ jobs:
     - name: Upload checksums to release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ needs.create-release.outputs.release_id }}
+        tag_name: ${{ needs.create-release.outputs.version }}
         files: artifacts/checksums.txt
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -273,7 +236,7 @@ jobs:
     - name: Publish Release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ needs.create-release.outputs.release_id }}
-        draft: false  # 设置为false表示发布release
+        tag_name: ${{ needs.create-release.outputs.version }}
+        draft: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
