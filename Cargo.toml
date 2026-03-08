@@ -1,6 +1,6 @@
 [package]
 name = "wood_cutter"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "木板分割 - NFP · GA · SA · SVGNest · MaxRects"
 
