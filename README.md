@@ -53,8 +53,8 @@ An algorithm specifically optimized for SVG vector shapes, supporting complex ge
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/2d-nesting-optimizer.git
-cd 2d-nesting-optimizer
+git clone https://github.com/caoyang2002/wood_cutter.git
+cd wood_cutter
 ```
 
 2. Build the project:
