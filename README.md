@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Wood Cutter
 
 > 2D Nesting Optimization Tool
@@ -75,9 +74,3 @@ This translation:
 - Keeps the code blocks and command examples intact
 - Accurately translates algorithm descriptions and feature lists
 - Retains the emojis and visual formatting elements
-=======
-# wood cutter
-
-木板切割工具
-
->>>>>>> ea38883e3a8881a7cb626e62ecbff9b8c61870b3
