@@ -9,6 +9,7 @@ mod utils;
 use app::WoodCutterApp;
 use utils::load_icon;
 
+// 主应用程序
 fn main() -> eframe::Result<()> {
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
@@ -29,6 +30,7 @@ fn main() -> eframe::Result<()> {
     )
 }
 
+// 设置字体
 fn setup_fonts(ctx: &egui::Context) {
     let mut fonts = egui::FontDefinitions::default();
     fonts.font_data.insert(

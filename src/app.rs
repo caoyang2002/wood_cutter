@@ -70,6 +70,7 @@ pub struct WoodCutterApp {
     pub error_msg: Option<String>,
 }
 
+// 实现
 impl Default for WoodCutterApp {
     fn default() -> Self {
         let mut app = Self {
